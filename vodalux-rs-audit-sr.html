@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vodalux — analiza i plan</title>
+<style>
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --ink:#15181c; --ink-2:#4b5560; --ink-3:#78828d;
+  --line:#e2e0da; --line-2:#cfccc4;
+  --accent:#0f5c6b; --accent-soft:#e3f0f2;
+  --red:#a8322a; --red-soft:#fbeae8;
+  --amber:#8a5a10; --amber-soft:#fcf2df;
+  --green:#28603a; --green-soft:#e6f1e9;
+  --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121417; --surface:#1a1d21; --ink:#e8e6e1; --ink-2:#a8b0b8; --ink-3:#7d858d;
+    --line:#2a2e34; --line-2:#3a3f46;
+    --accent:#5fb6c4; --accent-soft:#163035;
+    --red:#e08a80; --red-soft:#331d1a;
+    --amber:#d9ad62; --amber-soft:#332714;
+    --green:#7cb992; --green-soft:#16291d;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121417; --surface:#1a1d21; --ink:#e8e6e1; --ink-2:#a8b0b8; --ink-3:#7d858d;
+  --line:#2a2e34; --line-2:#3a3f46;
+  --accent:#5fb6c4; --accent-soft:#163035;
+  --red:#e08a80; --red-soft:#331d1a;
+  --amber:#d9ad62; --amber-soft:#332714;
+  --green:#7cb992; --green-soft:#16291d;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:16.5px; line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 120px}
+
+/* header */
+header.doc{padding:64px 0 40px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+h1{font-family:var(--serif);font-size:clamp(30px,5.6vw,46px);line-height:1.12;margin:16px 0 14px;font-weight:600;letter-spacing:-.015em}
+.lede{font-size:18px;color:var(--ink-2);max-width:60ch;margin:0}
+.meta{margin-top:26px;font-size:13.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 22px}
+
+/* toc */
+nav.toc{margin:36px 0 0;padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+nav.toc h2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin:0 0 12px;font-weight:600;font-family:var(--sans)}
+nav.toc ol{margin:0;padding-left:1.3em;columns:2;column-gap:32px}
+@media(max-width:640px){nav.toc ol{columns:1}}
+nav.toc li{margin:5px 0;break-inside:avoid}
+nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px solid transparent}
+nav.toc a:hover{border-bottom-color:var(--accent)}
+
+/* sections */
+section{padding-top:56px}
+h2{font-family:var(--serif);font-size:clamp(23px,3.6vw,30px);line-height:1.2;margin:0 0 6px;font-weight:600;letter-spacing:-.01em;scroll-margin-top:20px}
+h2 .num{color:var(--accent);font-family:var(--sans);font-size:14px;font-weight:700;display:block;letter-spacing:.08em;margin-bottom:8px}
+h3{font-size:18.5px;margin:34px 0 8px;font-weight:650;line-height:1.35}
+h4{font-size:16px;margin:22px 0 6px;font-weight:650;color:var(--ink)}
+p{margin:0 0 14px}
+ul,ol{margin:0 0 16px;padding-left:1.35em}
+li{margin:6px 0}
+li::marker{color:var(--ink-3)}
+strong{font-weight:650}
+code{font-family:var(--mono);font-size:.86em;background:var(--surface);border:1px solid var(--line);padding:1px 5px;border-radius:4px;word-break:break-all}
+hr{border:0;border-top:1px solid var(--line);margin:44px 0}
+a{color:var(--accent)}
+
+/* callouts */
+.box{border:1px solid var(--line);border-left:3px solid var(--accent);background:var(--surface);padding:18px 20px;border-radius:0 8px 8px 0;margin:22px 0}
+.box.bad{border-left-color:var(--red);background:var(--red-soft)}
+.box.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.box.good{border-left-color:var(--green);background:var(--green-soft)}
+.box p:last-child,.box ul:last-child,.box ol:last-child{margin-bottom:0}
+.box .t{font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;color:var(--accent)}
+.box.bad .t{color:var(--red)} .box.warn .t{color:var(--amber)} .box.good .t{color:var(--green)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:26px 0}
+.stat{background:var(--surface);padding:18px 16px}
+.stat .v{font-family:var(--serif);font-size:30px;line-height:1;font-weight:600;letter-spacing:-.02em}
+.stat .v.r{color:var(--red)} .stat .v.a{color:var(--amber)} .stat .v.g{color:var(--green)}
+.stat .l{font-size:12.5px;color:var(--ink-3);margin-top:7px;line-height:1.35}
+
+/* tables */
+.tw{overflow-x:auto;margin:22px 0;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--surface);min-width:520px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:650;border-bottom:1.5px solid var(--line-2);background:var(--bg)}
+tbody tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2.5px 7px;border-radius:4px;white-space:nowrap}
+.tag.cr{background:var(--red-soft);color:var(--red)}
+.tag.hi{background:var(--amber-soft);color:var(--amber)}
+.tag.md{background:var(--accent-soft);color:var(--accent)}
+.tag.lo{background:var(--surface);color:var(--ink-3);border:1px solid var(--line)}
+
+/* finding cards */
+.find{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:20px 22px;margin:16px 0}
+.find .hd{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:4px}
+.find .no{font-family:var(--mono);font-size:12.5px;color:var(--ink-3);font-weight:600}
+.find h3{margin:0;font-size:17.5px;flex:1 1 260px}
+.find .what{color:var(--ink-2);font-size:15px}
+.find .fix{margin-top:12px;padding-top:12px;border-top:1px dashed var(--line);font-size:14.5px}
+.find .fix b{color:var(--accent);font-size:12px;letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:4px}
+
+/* timeline */
+.tl{border-left:2px solid var(--line);margin:26px 0 26px 6px;padding-left:24px}
+.tl .ph{position:relative;padding-bottom:28px}
+.tl .ph:last-child{padding-bottom:0}
+.tl .ph::before{content:"";position:absolute;left:-31px;top:7px;width:11px;height:11px;border-radius:50%;background:var(--accent);border:2.5px solid var(--bg)}
+.tl .per{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.tl h3{margin:3px 0 7px;font-size:17.5px}
+.tl ul{margin-bottom:0}
+
+.quote{border-left:3px solid var(--line-2);padding:4px 0 4px 18px;margin:18px 0;color:var(--ink-2);font-style:italic}
+.small{font-size:13.5px;color:var(--ink-3)}
+footer.doc{margin-top:72px;padding-top:28px;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink-3)}
+
+@media print{
+  body{background:#fff;color:#000;font-size:11pt}
+  nav.toc{break-inside:avoid}
+  section{break-inside:auto;padding-top:28px}
+  h2{break-after:avoid}
+  .find,.box,.stats,.tw{break-inside:avoid}
+  .wrap{max-width:none;padding:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="doc">
+  <div class="eyebrow">SEO analiza i predlog saradnje</div>
+  <h1>vodalux.rs: šta se dešava sa sajtom, šta predlaže izvođač i šta ja predlažem umesto toga</h1>
+  <p class="lede">Analiza ponude koju ste dobili, nezavisna tehnička provera sajta po 193 skenirane adrese i plan promocije na 12 meseci sa budžetom od 500 € mesečno.</p>
+  <div class="meta">
+    <span>Domen: vodalux.rs</span>
+    <span>Datum: 30. oktobar 2026.</span>
+    <span>Podaci: potpun obilazak sajta, 193 URL-a, 1&nbsp;629 utvrđenih problema</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>Sadržaj</h2>
+  <ol>
+    <li><a href="#s1">Ukratko: glavni zaključak</a></li>
+    <li><a href="#s2">Analiza Goranove ponude</a></li>
+    <li><a href="#s3">Zašto isto to košta višestruko manje</a></li>
+    <li><a href="#s4">Analiza: šta je pokazao obilazak sajta</a></li>
+    <li><a href="#s5">18 nalaza po prioritetu</a></li>
+    <li><a href="#s6">Šta na sajtu dobro funkcioniše</a></li>
+    <li><a href="#s7">Konkurencija i tržište</a></li>
+    <li><a href="#s8">Šta predlažem da radimo</a></li>
+    <li><a href="#s9">Plan na 12 meseci, 500 €/mesečno</a></li>
+    <li><a href="#s10">Šta realno očekivati</a></li>
+    <li><a href="#s11">Šta mi je potrebno od vas</a></li>
+    <li><a href="#s12">Prilog: tabele</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+<h2><span class="num">01</span>Ukratko: glavni zaključak</h2>
+
+<p>Dobili ste ponudu da se sajt prepiše na Laravel i da se paralelno izgradi internet prodavnica. Ukupno je reč o 4&nbsp;500–7&nbsp;500 €, plus 120–250 € mesečno. Ponudu je napisao tehnički kompetentan čovek i kao plan razvoja ona je sasvim korektna.</p>
+
+<p><strong>Problem je u nečem drugom: ona rešava zadatak koji trenutno nije zadatak ovog sajta.</strong></p>
+
+<p>Uradio sam potpun obilazak sajta vodalux.rs. Robot je prošao 193 adrese i zabeležio 1&nbsp;629 problema. Evo šta se pokazalo:</p>
+
+<div class="stats">
+  <div class="stat"><div class="v r">48%</div><div class="l">stranica sajta je demo sadržaj Joomla šablona koji nikada nije obrisan</div></div>
+  <div class="stat"><div class="v r">×2</div><div class="l">ceo sajt postoji u dve potpune kopije: na www i bez www</div></div>
+  <div class="stat"><div class="v a">34%</div><div class="l">samo trećina adresa su vaše stvarne stranice o uslugama</div></div>
+  <div class="stat"><div class="v r">0</div><div class="l">stranica sa canonical oznakom i nijedna adresa u mapi sajta</div></div>
+</div>
+
+<p>Nijedan od ovih problema nije nastao zato što sajt radi na Joomli. Svi su nastali zbog podešavanja, strukture i sadržaja. I svi će se preseliti zajedno sa sajtom na Laravel, ako se prethodno ne reše.</p>
+
+<div class="box bad">
+  <div class="t">Glavna misao</div>
+  <p>Preseliti sajt u ovakvom stanju na novi sistem znači platiti da ista ta zbrka proradi na skupljoj tehnologiji. Prvo treba srediti ono što već postoji. Posle toga se u devet od deset slučajeva pitanje „da li uopšte treba seliti sajt“ samo od sebe ukine — a ako se ne ukine, selidba će koštati višestruko manje, jer će biti jasno šta tačno treba preseliti.</p>
+</div>
+
+<p>U nacrtu odgovora koji ste priložili stoji tačno zapažanje: <em>Laravel nije obavezan uslov za kvalitetan SEO</em>. Tako je. Google ne zna i ne može da sazna na kom je sistemu sajt napravljen. On vidi adrese, naslove, tekstove, brzinu i linkove. Upravo to ćemo menjati.</p>
+</section>
+
+<hr>
+
+<section id="s2">
+<h2><span class="num">02</span>Analiza Goranove ponude</h2>
+
+<p>Idem tačku po tačku — šta je u njoj ispravno, šta je sporno i čega u njoj nema.</p>
+
+<h3>Šta je ispravno formulisano</h3>
+<ul>
+  <li><strong>Razdvajanje vodalux.rs i HomeProLine na dva sistema.</strong> Strateški je to tačno. Sajt koji prikuplja upite za montažu i prodavnica komponenti su različiti tipovi projekata, sa različitom strukturom, različitom publikom i različitim pretragama. Mešati ih na jednom domenu je greška.</li>
+  <li><strong>Prioritet očuvanja pozicija pri selidbi.</strong> Takođe tačno. Prvo popis adresa, pa mapa preusmerenja, pa selidba. Upravo tim redosledom.</li>
+  <li><strong>Spisak tehničkih elemenata</strong> — canonical, 301 preusmerenja, sitemap.xml, robots.txt, Search Console, optimizacija slika. Sve to sajtu zaista treba. I to odmah.</li>
+  <li><strong>Odustajanje od radikalnog redizajna.</strong> Razumno. Menjati izgled istovremeno sa adresama i sistemom je način da se izgubi saobraćaj i da se ne zna zbog čega.</li>
+  <li><strong>Pošteno piše da će tačna cena biti poznata nakon pristupa.</strong> To je znak korektnosti, a ne trik.</li>
+</ul>
+
+<h3>Šta je sporno</h3>
+
+<h4>1. Laravel + Filament umesto WordPress-a</h4>
+<p>Argument u pismu: „već sada je potrebna ozbiljnija kontrola nad sistemom: SEO migracija, katalog, proizvodi, upiti, konsultacije, video sadržaj, moguće B2B cene“.</p>
+<p>Svaku stavku sa tog spiska WordPress sa WooCommerce-om pokriva odmah, kroz gotova rešenja koja koriste milioni prodavnica. Katalog, kartice proizvoda, cene, dostupnost, korpa, porudžbine, mejlovi potvrde, dostava, plaćanje, B2B cenovnici, SEO polja za svaku stranicu, video — to nisu zadaci zbog kojih treba pisati sopstvenu aplikaciju.</p>
+<p>Laravel + Filament je <strong>razvoj po narudžbini</strong>. Razlika nije u kvalitetu, nego u onome što sledi posle:</p>
+<div class="tw"><table>
+<thead><tr><th>Situacija</th><th>Gotov CMS</th><th>Sopstvena aplikacija na Laravelu</th></tr></thead>
+<tbody>
+<tr><td>Dodati blok „utisci klijenata“ na stranicu</td><td>Modul, podešavanje, pola sata</td><td>Zadatak za programera, njegova cena, njegov red čekanja</td></tr>
+<tr><td>Izmeniti formu za upit</td><td>Podešavanje u administraciji</td><td>Zadatak za programera</td></tr>
+<tr><td>Dodati FAQ mikro-označavanje</td><td>Dodatak ili polje u editoru</td><td>Zadatak za programera</td></tr>
+<tr><td>Promeniti izvođača</td><td>Bilo koji stručnjak na tržištu</td><td>Potreban je Laravel programer koji će ući u tuđi kôd</td></tr>
+<tr><td>Cena održavanja</td><td>Niska</td><td>Stalna, po ceni sata programera</td></tr>
+</tbody></table></div>
+<p>Za sajt koji prikuplja upite za staklene ograde, zavisnost od jednog programera je rizik, a ne prednost.</p>
+
+<h4>2. Selidba kao prvi korak</h4>
+<p>U pismu je redosled ovakav: analiza → prenos vodalux-a → prodavnica → video sekcija. Ali sam prenos <strong>ne donosi nijedan upit</strong>. Najbolji mogući ishod selidbe jeste da ste ostali tamo gde ste i bili. Najgori — da ste izgubili pozicije na 3–6 meseci. To je posao sa nultim ili negativnim očekivanjem po saobraćaju, za koji se traži 2&nbsp;000–3&nbsp;200 €.</p>
+
+<h4>3. Prodavnica pre nego što postoji tražnja</h4>
+<p>2&nbsp;500–4&nbsp;500 € za „osnovnu verziju“ HomeProLine-a predlaže se da se uloži pre nego što je provereno da se komponente za staklene ograde uopšte kupuju onlajn u Srbiji i u kom obimu. To se proverava jeftinije: nekoliko stranica sa proizvodima i formom za upit, pa dva meseca praćenja pretraga. Ako tražnja postoji — prodavnica će se isplatiti. Ako ne postoji — uštedeli ste četvorocifrenu sumu.</p>
+
+<h3>Čega u ponudi nema</h3>
+<div class="box warn">
+  <div class="t">Ovo je važno</div>
+  <p>U pismu <strong>nema rezultata analize sajta</strong>. Postoji opis radova koji će se izvesti i rasponi cena. Ali nema nijednog konkretnog nalaza: koliko ima stranica, koje se dupliraju, šta se indeksira, po kojim pretragama sajt dobija prikaze, šta je pokvareno u ovom trenutku.</p>
+  <p>On to i sam napominje: „Tačna cena biće određena nakon dobijanja pristupa“. Dakle, rasponi 1&nbsp;800–2&nbsp;800 € i 2&nbsp;500–4&nbsp;500 € su procena naslepo, sa rezervom za nepoznato. Ta rezerva se ugrađuje u cenu, a plaćate je vi.</p>
+  <p>Dokument koji sada čitate napravljen je na osnovu podataka iz obilaska. Znam da sajt ima 97 jedinstvenih adresa, od kojih su 33 stvarne komercijalne stranice, a 47 treba obrisati. To više nije procena naslepo.</p>
+</div>
+
+<p>U ponudi se takođe ne pominju stvari koje su na sajtu pokvarene u ovom trenutku — na primer, stranica „O nama“ na adresi <code>/index.php/ogledala</code> vraća fatalnu PHP grešku o nedostajućoj datoteci Joomla jezgra, a pritom se nalazi u Google indeksu. Takve stvari se vide tek posle obilaska.</p>
+</section>
+
+<hr>
+
+<section id="s3">
+<h2><span class="num">03</span>Zašto isto to košta višestruko manje</h2>
+
+<p>Neću ovde navoditi svoje cifre za razvoj — cena zavisi od toga šta na kraju odlučite da radite. Ali ću objasniti od čega se sastoji razlika, da biste mogli sami da procenite bilo koju ponudu.</p>
+
+<h3>1. Više od polovine stavki iz predračuna je podešavanje, a ne razvoj</h3>
+<p>Pogledajte spisak iz „Faze 2“: sitemap.xml, robots.txt, canonical, 301 preusmerenja, povezivanje Analytics-a i Search Console-a, SEO polja za stranice, osnovna zaštita. U predračunu su unutar stavke „razvoj sistema — 1&nbsp;800–2&nbsp;800 €“. U praksi se u Joomli sve to rešava ugrađenim funkcijama i jednim SEO dodatkom. To je posao od nekoliko sati, a ne od nekoliko nedelja, i ne zahteva novi sistem.</p>
+
+<h3>2. Mapa preusmerenja se pravi automatski</h3>
+<p>„Pravljenje spiska svih važnih URL adresa“ i „izrada mape migracije stari → novi“ u pismu izgledaju kao posebna naplativa faza od 250–400 €. Taj posao se radi izvozom iz krolera i Search Console-a i uparivanjem u tabeli. Spisak svih 193 adrese već imam — priložen je uz ovaj dokument.</p>
+
+<h3>3. Najskuplji deo rešava problem koji ne postoji</h3>
+<p>Prošao sam ceo sajt i izdvojio 18 stvarnih problema. Evo ih po izvoru:</p>
+<div class="tw"><table>
+<thead><tr><th>Izvor problema</th><th class="num">Broj nalaza</th><th>Rešava li se selidbom na Laravel?</th></tr></thead>
+<tbody>
+<tr><td>Podešavanja servera i CMS-a (www verzije, preusmerenja, canonical, mapa sajta, zaglavlja)</td><td class="num">6</td><td>Ne — rešava se podešavanjem na bilo kom sistemu</td></tr>
+<tr><td>Sadržaj i meta podaci (naslovi, opisi, tekstovi, alt)</td><td class="num">7</td><td>Ne — tekstovi se moraju pisati iznova u svakom slučaju</td></tr>
+<tr><td>Struktura i adrese (nepotrebne stranice, dužina URL-a, interno povezivanje)</td><td class="num">4</td><td>Ne — struktura se projektuje nezavisno od sistema</td></tr>
+<tr><td>Verzija i stanje CMS-a (oštećene datoteke jezgra, zastarela verzija)</td><td class="num">1</td><td>Da — ali to se isto rešava nadogradnjom ili prelaskom na WordPress</td></tr>
+</tbody></table></div>
+<p>Dakle, 17 od 18 problema nema nikakve veze sa izborom sistema.</p>
+
+<h3>4. Prodavnica na gotovoj platformi</h3>
+<p>Funkcionalnost iz „Faze 3“ — kategorije, kartice, slike, cene, dostupnost, forma za upit, korpa, poručivanje, mejlovi, administracija porudžbina, dostava i plaćanje, SEO polja — to je standardna oprema WooCommerce-a ili Shopify-a. Razvijati to iz nule na Laravelu znači ponovo izmišljati nešto što je već napisano, testirano i besplatno.</p>
+
+<h3>5. Obim posla je poznat i manji je nego što izgleda</h3>
+<p>Raspon u pismu je računat na nepoznato: „koliko stranica, slika, URL adresa i postojećih pozicija treba sačuvati“. Odgovor već postoji:</p>
+<div class="stats">
+  <div class="stat"><div class="v">33</div><div class="l">komercijalne stranice koje treba sačuvati i prepisati</div></div>
+  <div class="stat"><div class="v">47</div><div class="l">stranica za brisanje — demo sadržaj šablona</div></div>
+  <div class="stat"><div class="v">17</div><div class="l">praznih stranica koje vraćaju kôd 200 bez sadržaja</div></div>
+  <div class="stat"><div class="v">10</div><div class="l">stranica na engleskom za tržište SAD — zasebno pitanje</div></div>
+</div>
+<p>Preseliti treba 33 stranice, a ne 193. To je suštinski drugačiji obim posla.</p>
+
+<h3>6. Različite struke</h3>
+<p>Goran je programer. On prodaje razvoj, a SEO je u njegovom predračunu stavka unutar tehničke specifikacije. Kod nas je obrnuto: mi se bavimo promocijom, a tehnički deo je alat unutar nje, a ne zaseban projekat. Zato tehnički radovi iz njegove „Faze 1“ i polovine „Faze 2“ kod nas ulaze u mesečni rad, a ne u poseban račun.</p>
+
+<h3>7. Šta zapravo treba uporediti</h3>
+<div class="box">
+  <div class="t">Poređenje po suštini</div>
+  <p><strong>Goranova varijanta za prvu godinu:</strong> 2&nbsp;000–3&nbsp;200 € za analizu i selidbu, plus 1&nbsp;440–3&nbsp;000 € za održavanje (120–250 € mesečno). Ukupno 3&nbsp;440–6&nbsp;200 €. Šta dobijate: isti sajt na drugom sistemu, rezervne kopije, praćenje grešaka i „osnovni SEO monitoring“. Rast upita u tome nije predviđen — i on to pošteno ne obećava.</p>
+  <p><strong>Varijanta promocije:</strong> 500 € mesečno, i unutar te sume radi se ceo tehnički deo — preusmerenja, canonical, mapa sajta, čišćenje indeksa, meta podaci — plus lista ključnih reči, sadržaj, komercijalni faktori, lokalna promocija i linkovi. Dakle, novac ide u rast, a tehnički red se uspostavlja usput.</p>
+  <p>Uporedive sume. Suštinski različit rezultat.</p>
+</div>
+</section>
+
+<hr>
+
+<section id="s4">
+<h2><span class="num">04</span>Analiza: šta je pokazao obilazak sajta</h2>
+
+<p>Robot je prošao sajt u celini, počev od početne strane, i prikupio 193 adrese. Za svaku su zabeleženi kôd odgovora, zaglavlja, tekstovi, slike i linkovi. Ukupno je utvrđeno 1&nbsp;629 problema: 112 kritičnih, 853 upozorenja i 664 napomene.</p>
+
+<h3>Od čega se sajt sastoji</h3>
+<p>Prvo što treba razumeti: 193 adrese nisu 193 stranice. Ceo sajt se otvara na dve adrese, sa <code>www</code> i bez, i svaka stranica postoji u dve identične kopije. Jedinstvenih adresa ima 97. Evo kako su raspoređene:</p>
+
+<div class="tw"><table>
+<thead><tr><th>Šta je to</th><th class="num">Adresa</th><th class="num">Udeo</th><th>Šta sa tim</th></tr></thead>
+<tbody>
+<tr><td><strong>Komercijalne stranice na srpskom</strong> — ograde, tuš kabine, pregradni zidovi, ogledala, kuhinjska stakla</td><td class="num">33</td><td class="num">34%</td><td>Sačuvati, prepisati, ojačati</td></tr>
+<tr><td>Demo pomoć Joomle — „Getting Started“, „Using Joomla“, „Media Manager“, „Banners“, „Menu Manager“</td><td class="num">25</td><td class="num">26%</td><td>Obrisati</td></tr>
+<tr><td>Demo blog šablona — „See the new Miss Universe get her crown“, „Fireworks are becoming lethal“, „Who actually clicks on banner ads“</td><td class="num">11</td><td class="num">11%</td><td>Obrisati</td></tr>
+<tr><td>Stranice na engleskom za Teksas — Houston, Dallas, Austin, San Antonio</td><td class="num">10</td><td class="num">10%</td><td>Posebna odluka, vidi nalaz br. 12</td></tr>
+<tr><td>Demo oznake šablona — <code>drupal</code>, <code>envato</code>, <code>retina</code>, <code>themes</code>, <code>twitter</code>, <code>clean</code>, <code>creative</code>, <code>joomla</code></td><td class="num">8</td><td class="num">8%</td><td>Obrisati</td></tr>
+<tr><td>Duplikati početne strane</td><td class="num">5</td><td class="num">5%</td><td>Spojiti u jednu adresu</td></tr>
+<tr><td>Servisne kategorije Joomle</td><td class="num">3</td><td class="num">3%</td><td>Obrisati</td></tr>
+<tr><td>Izvozna tržišta — Austrija, Crna Gora</td><td class="num">2</td><td class="num">2%</td><td>Sačuvati, doraditi</td></tr>
+</tbody></table></div>
+
+<div class="box bad">
+  <div class="t">Šta to znači jednostavnim rečima</div>
+  <p>Google obilazi sajt sa ograničenim budžetom: ima približan broj stranica koje je spreman da preuzme po poseti. Trenutno se <strong>skoro polovina tog budžeta troši na stranice Joomla šablona</strong>, koje nemaju nikakve veze sa vašim poslom, a još polovina preostalog — na njihove kopije sa <code>www</code>.</p>
+  <p>Vaših 33 stvarne stranice o ogradama, tuš kabinama i pregradnim zidovima trenutno se takmiče za pažnju robota sa stranicom „Who actually clicks on banner ads“ i oznakom „drupal“.</p>
+</div>
+
+<h3>Zbirni pregled po kodovima problema</h3>
+<div class="tw"><table>
+<thead><tr><th>Kôd problema</th><th class="num">Stranica</th><th>Šta je to</th><th>Složenost</th></tr></thead>
+<tbody>
+<tr><td><code>CANONICAL_MISSING</code></td><td class="num">193</td><td>Nema canonical oznake — ni na jednoj stranici sajta</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>SECURITY_HEADERS_MISSING</code></td><td class="num">193</td><td>Nema HSTS, CSP, X-Frame-Options, X-Content-Type-Options</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>TITLE_DUPLICATE</code></td><td class="num">159</td><td>Ponovljeni naslovi, uključujući 60 stranica sa naslovom „vodalux“</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>IMAGES_ALT_MISSING</code></td><td class="num">159</td><td>Slike bez alt atributa</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>THIN_CONTENT</code></td><td class="num">156</td><td>Manje od 300 reči korisnog teksta</td><td><span class="tag hi">Teško</span></td></tr>
+<tr><td><code>TITLE_TOO_SHORT</code></td><td class="num">153</td><td>Naslov prekratak, ne sadrži pretragu</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>DESCRIPTION_MISSING</code></td><td class="num">130</td><td>Nema opisa za prikaz u rezultatima pretrage</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>MULTIPLE_H1</code></td><td class="num">101</td><td>Više H1 naslova na jednoj stranici</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>NEAR_DUPLICATE_CONTENT</code></td><td class="num">98</td><td>Tekst stranice se poklapa sa drugom stranicom</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>DESCRIPTION_DUPLICATE</code></td><td class="num">63</td><td>Isti opisi na različitim stranicama</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>DESCRIPTION_TOO_LONG</code></td><td class="num">46</td><td>Opis od 300–700 karaktera, Google će ga skratiti</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>TITLE_MISSING</code></td><td class="num">34</td><td>Nema naslova uopšte</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>H1_MISSING</code></td><td class="num">34</td><td>Nema H1</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>SCHEMA_OG_MISSING</code></td><td class="num">34</td><td>Nema Open Graph — link na društvenim mrežama izgleda prazno</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>VIEWPORT_MISSING</code></td><td class="num">34</td><td>Nema meta viewport — stranica nije prilagođena telefonu</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>DEEP_PAGE</code></td><td class="num">24</td><td>Do stranice treba 4–7 klikova sa početne</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>DESCRIPTION_TOO_SHORT</code></td><td class="num">7</td><td>Opis prekratak</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>MIXED_CONTENT</code></td><td class="num">6</td><td>Na HTTPS stranici resursi se učitavaju preko HTTP-a</td><td><span class="tag md">Srednje</span></td></tr>
+<tr><td><code>TITLE_DESC_OVERLAP</code></td><td class="num">4</td><td>Naslov i opis dupliraju jedan drugog</td><td><span class="tag lo">Lako</span></td></tr>
+<tr><td><code>SLOW_RESPONSE</code></td><td class="num">1</td><td>Server je odgovarao 1&nbsp;501 ms</td><td><span class="tag md">Srednje</span></td></tr>
+</tbody></table></div>
+
+<p class="small">Obratite pažnju na raspodelu po složenosti: velika većina problema označena je kao „lako“. To nije optimizam — to znači da se rešavaju izmenom šablona i podešavanjima, a ne prepisivanjem sajta.</p>
+</section>
+
+<hr>
+
+<section id="s5">
+<h2><span class="num">05</span>18 nalaza po prioritetu</h2>
+<p>Za svaki nalaz: šta je utvrđeno, šta to praktično znači za vas i šta s tim treba uraditi.</p>
+
+<h3>Kritično — blokira rast</h3>
+
+<div class="find">
+  <div class="hd"><span class="no">01</span><h3>Sajt postoji u dve potpune kopije</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">Svaka stranica se otvara i na <code>vodalux.rs</code> i na <code>www.vodalux.rs</code>. Robot je pronašao 93 putanje dostupne na obe adrese. Preusmerenja između njih nema, canonical oznake nema ni na jednoj stranici.</p>
+  <p class="what"><strong>Šta to znači.</strong> Za Google su to dva različita sajta sa istim sadržajem. Snaga linkova i stečeni autoritet dele se između njih na pola. U pretrazi se to već vidi: po jednim pretragama prikazuje se verzija sa <code>www</code>, po drugim bez. Umesto jedne jake stranice imate dve slabe, koje se takmiče međusobno.</p>
+  <div class="fix"><b>Rešenje</b>Izabrati glavnu verziju, podesiti trajno preusmerenje 301 sa druge na prvu, upisati canonical na sve stranice, prijaviti glavnu verziju u Search Console-u. Posao od nekoliko sati, efekat — udvostručenje snage svake stranice.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">02</span><h3>Početna strana je dostupna na najmanje šest adresa</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">Isti sadržaj (5&nbsp;818 reči, 99 slika, 55 H2 naslova) prikazuje se na adresama: <code>vodalux.rs</code>, <code>vodalux.rs/</code>, <code>vodalux.rs/index.php</code> — i na svakoj od njih još i sa <code>www</code>. Pored toga, isti tekst se u celini duplira na stranici <code>/index.php/staklene-ograde/staklene-ograde-ograde-od-stakla…</code> i njenoj podstranici <code>/81-staklene-ograde</code>.</p>
+  <p class="what"><strong>Šta to znači.</strong> Najvažnija stranica sajta razmazana je po osam adresa. Google sam bira jednu od njih, i ne uvek onu koju vi želite.</p>
+  <div class="fix"><b>Rešenje</b>Jedna kanonska adresa početne strane, 301 sa svih ostalih, canonical na svim varijantama.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">03</span><h3>Skoro polovina sajta je demo sadržaj Joomla šablona</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">47 od 97 jedinstvenih adresa je sadržaj koji je došao uz šablon i nikada nije obrisan. Među njima: 25 stranica Joomla pomoći („Getting Help“, „The Joomla Project“, „Extensions Manager“, „Global Configuration“), 11 objava demo bloga („See the new Miss Universe get her crown“, „Fireworks are becoming lethal“, „Wedding is tougher now“, „Best in the business“), 8 stranica oznaka (<code>drupal</code>, <code>envato</code>, <code>retina</code>, <code>themes</code>), 3 servisne kategorije. Sve vraćaju kôd 200 i indeksiraju se.</p>
+  <p class="what"><strong>Šta to znači.</strong> Google ocenjuje sajt u celini. Kada je polovina stranica šablonski otpad na engleskom o Joomli i Miss Universe, sajt u očima pretraživača izgleda napušteno ili sklepano. To direktno utiče na to koliko rado Google prikazuje vaše komercijalne stranice.</p>
+  <div class="fix"><b>Rešenje</b>Obrisati svih 47 stranica, vratiti kôd 410 ili 301 ka odgovarajućim sekcijama. Efekat se vidi u roku od 4–8 nedelja nakon ponovnog obilaska.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">04</span><h3>Nema mape sajta ni jedne canonical oznake</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">Od 193 adrese, <strong>nijedna</strong> nije u sitemap.xml — datoteka jednostavno ne postoji. Canonical oznaka nedostaje na 100% stranica.</p>
+  <p class="what"><strong>Šta to znači.</strong> Mapa sajta je način da se Google-u kaže „ovo su moje stranice, ovo im je prioritet, ovo je datum poslednje izmene“. Bez nje robot stranice traži sam, po linkovima, i prvo nalazi ono na šta vodi najviše linkova — a najviše linkova trenutno vodi upravo ka nepotrebnim stranicama u prolaznom meniju. Canonical je način da se kaže „ovo je glavna adresa ove stranice“. Bez njega Google odlučuje sam.</p>
+  <div class="fix"><b>Rešenje</b>Generisati sitemap.xml samo sa potrebnim stranicama, dodati ga u robots.txt i Search Console. Upisati canonical u šablon. U Joomli je to jedan dodatak i jedno podešavanje.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">05</span><h3>H1 „Vodalux Solution“ na svim stranicama sajta</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">Na svih 80 stranica gde H1 uopšte postoji, on je isti: <em>Vodalux Solution</em>. Na još 17 stranica H1 ne postoji. Pritom je na 101 stranici pronađeno više H1 naslova istovremeno.</p>
+  <p class="what"><strong>Šta to znači.</strong> H1 je glavni naslov po kome Google razume o čemu je stranica. Sajt trenutno govori pretraživaču da je svih 80 stranica o istoj stvari: o firmi Vodalux Solution. Stranica o tuš kabinama, stranica o prohromskim ogradama i stranica o ogledalima za Google izgledaju tematski identično.</p>
+  <div class="fix"><b>Rešenje</b>Jedan H1 po stranici, sa glavnom pretragom te stranice: „Staklene ograde i gelenderi — izrada i ugradnja“, „Tuš kabine po meri“, „Prohromske ograde“ i tako dalje. Naziv firme ide u logo i u naslov stranice.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">06</span><h3>Naslovi: 30 stranica se zove „vodalux“, 17 je bez naslova</h3><span class="tag cr">Kritično</span></div>
+  <p class="what">Naslov se duplira na 159 od 193 adrese. Od toga 60 ima naslov <code>vodalux</code> (7 karaktera), a 34 su potpuno bez naslova. Ostali su kratki i bez pretraga: „Ograde“ (6 karaktera), „Kuhinje“, „Kupatila“.</p>
+  <p class="what"><strong>Šta to znači.</strong> Naslov je plavi link u rezultatima pretrage. To je prvo i najčešće jedino što čovek vidi. Reč „vodalux“ ne odgovara ni na jednu pretragu i ne daje razlog za klik. Za Google je to i osnovni signal relevantnosti — koji trenutno ne postoji.</p>
+  <div class="fix"><b>Rešenje</b>Jedinstven naslov za svaku komercijalnu stranicu, po formuli „glavna pretraga + dopuna + grad“. Primer: <em>Staklene ograde Beograd — izrada i ugradnja, cena od 200 €/m | Vodalux</em>. 33 stranice, posao od 1–2 dana.</div>
+</div>
+
+<h3>Visok prioritet</h3>
+
+<div class="find">
+  <div class="hd"><span class="no">07</span><h3>Opisi: 65 stranica bez opisa, 17 sa opisom od 300–700 karaktera</h3><span class="tag hi">Visok</span></div>
+  <p class="what">Na 130 adresa opis ne postoji. Tamo gde postoji, najčešće je to nabrajanje ključnih reči odvojenih zarezima: <em>„stakla za tus kabine, ugradnja tus kabina, tus paravan, stakleni paravani, stakla za tus kabine jedno staklo…“</em> — do 702 karaktera. Google prikazuje oko 160.</p>
+  <p class="what"><strong>Šta to znači.</strong> Opis je tekst ispod plavog linka. Kada ga nema, Google uzima nasumičan deo stranice. Kada je to spisak ključnih reči, čovek u rezultatima vidi nepovezan niz reči i bira konkurenta. Na rangiranje opis skoro da ne utiče, ali na broj klikova utiče jako.</p>
+  <div class="fix"><b>Rešenje</b>Prepisati 33 opisa kao ljudski tekst od 140–160 karaktera, sa koristom i pozivom na akciju: šta radite, po kojoj ceni, u kom roku, kako da vas kontaktiraju.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">08</span><h3>Adrese stranica dugačke do 1&nbsp;053 karaktera</h3><span class="tag hi">Visok</span></div>
+  <p class="what">36 adresa je duže od 200 karaktera, a najduže imaju 1&nbsp;053 karaktera. Primer strukture: <code>/index.php/staklene-ograde/staklene-ograde-ograde-od-stakla-staklene-ograde-na-stepenistu-staklene-ograde-na-terasi-staklene-ograde-bez-bocnih-stubova-…-vracar-zemun-ovca-borca-novi-beograd-dedinje-dorcol/</code> — a to još nije kraj.</p>
+  <p class="what"><strong>Šta to znači.</strong> To je metod iz SEO-a sa početka 2010-ih: nagurati u adresu sve ključne reči i sve gradove. Google je prestao da to uzima u obzir pre više od deset godina, a od 2012. se takve konstrukcije smatraju prespamovanjem. Praktična šteta danas: takav link ne možete poslati na WhatsApp ili Viber — zauzima pola ekrana i izgleda kao spam. Ne možete ga pročitati naglas preko telefona. Skraćuje se u rezultatima pretrage.</p>
+  <div class="fix"><b>Rešenje</b>Kratke adrese tipa <code>/staklene-ograde/</code>, <code>/staklene-ograde/za-terase/</code>, <code>/tus-kabine/po-meri/</code>. Sa starih adresa — 301 na nove. Mapa uparivanja se pravi iz priložene tabele.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">09</span><h3>17 praznih stranica vraća kôd 200</h3><span class="tag hi">Visok</span></div>
+  <p class="what">Po verziji sajta ima 17 adresa sa 31 rečju na stranici — dakle samo meni i podnožje, bez sadržaja. Među njima je cela sekcija <code>/index.php/tus-kabine/</code> (4 stranice), <code>/index.php/kuhinje/…</code>, <code>/index.php/welcome.html</code>, <code>/index.php?Itemid=243</code>, <code>/index.php?Itemid=429</code> i nekoliko ogromnih adresa na engleskom za Teksas. Sve vraćaju kôd 200 „sve je u redu“.</p>
+  <p class="what"><strong>Šta to znači.</strong> To su „meke greške 404“: stranice kojih zapravo nema, a server kaže da postoje. Google ih indeksira, troši na njih budžet obilaska i snižava opštu ocenu kvaliteta sajta. Posebno je loše to što je sekcija <code>/tus-kabine/</code> prazna, iako stranice o tuš kabinama postoje na drugim adresama — dakle imate i prazan duplikat i popunjen original.</p>
+  <div class="fix"><b>Rešenje</b>Podesiti ispravan kôd 404 ili 410, ili 301 ka radnom ekvivalentu. Za <code>/tus-kabine/</code> — spojiti sa popunjenom sekcijom.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">10</span><h3>Prolazno povezivanje: 15&nbsp;190 internih linkova na 193 stranice</h3><span class="tag hi">Visok</span></div>
+  <p class="what">U proseku sa svake stranice odlazi oko 79 internih linkova. Tekstovi linkova se ponavljaju: „Staklene ograde i gelenderi“ javlja se 320 puta, „Tuš kabine po meri“ 324 puta, i tako za svih 30 sekcija po otprilike 318 puta. Još 1&nbsp;504 linka nemaju nikakav tekst — to su slike bez alt atributa.</p>
+  <p class="what"><strong>Šta to znači.</strong> Svaka stranica vodi ka skoro svim ostalima istim tekstom. Za Google to znači da sajt nema prioritete: sve stranice su podjednako važne, dakle nijedna nije važna. Snaga se raspoređuje ravnomerno umesto da se koncentriše na stranice koje treba da prodaju.</p>
+  <div class="fix"><b>Rešenje</b>Skratiti prolazni meni na stvarne sekcije, izgraditi hijerarhiju „početna → kategorija → usluga“, dodati navigacione putanje, povezati stranice po smislu unutar teksta, a ne spiskom u podnožju.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">11</span><h3>Zastarela Joomla i oštećene datoteke jezgra</h3><span class="tag hi">Visok</span></div>
+  <p class="what">Stranica <code>/index.php/ogledala</code> (u Google indeksu vodi se kao „O nama“) vraća fatalnu PHP grešku: nije pronađena datoteka <code>libraries/joomla/document/html/renderer/head.php</code>. Struktura putanja odgovara Joomli 3.x — grani koja je povučena iz podrške u avgustu 2023. i više ne dobija bezbednosne nadogradnje.</p>
+  <p class="what"><strong>Šta to znači.</strong> Stranica „O nama“ za posetioca koji je došao iz pretrage je beli ekran sa tekstom greške i putanjom do datoteka vašeg servera. Odvojeno: CMS bez bezbednosnih nadogradnji je stvaran rizik od upada, a hakovan sajt Google izbacuje iz rezultata u roku od jednog dana. Goran u svom pismu takođe pominje „hakovane stranice i zastarele Joomla elemente“ — izgleda da je primetio iste tragove.</p>
+  <div class="fix"><b>Rešenje</b>Hitno: potpuna rezervna kopija, provera integriteta datoteka, provera na zlonamerni kôd, vraćanje nedostajućih datoteka jezgra. Zatim — nadogradnja na podržanu verziju ili planiran prelazak na WordPress. <strong>Ovo je jedina tačka od 18 gde se pitanje sistema zaista postavlja.</strong></div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">12</span><h3>Stranice na engleskom za tržište SAD na srpskom domenu</h3><span class="tag hi">Visok</span></div>
+  <p class="what">10 adresa posvećeno je staklenim ogradama u Teksasu: Houston, Dallas, Austin, San Antonio, Corpus Christi, Galveston. Jedna od njih ima 6&nbsp;149 reči i 81 sliku i druga je po broju dolaznih linkova na celom sajtu (596). Atribut hreflang ne postoji ni na jednoj od 193 adrese. Jezičkih verzija kao takvih nema — sadržaj na engleskom jednostavno leži unutar srpskog sajta.</p>
+  <p class="what"><strong>Šta to znači.</strong> Google ne razume za koju su zemlju i jezik sajt namenjeni. Srpska i teksaška stranica leže na istom <code>.rs</code> domenu bez razdvajanja. To razvodnjava geografsku relevantnost: za srpske pretrage sajt deluje delimično američki, za američke — srpski. Ni tamo ni ovde se ne doživljava kao domaći.</p>
+  <div class="fix"><b>Rešenje</b>Potrebna je vaša odluka: da li zaista radite na tržištu SAD. Ako da — izdvojiti na zaseban domen ili poddomen sa ispravnim hreflang-om. Ako ne — ukloniti, a oslobođenu snagu usmeriti na srpske stranice. Druga varijanta brže daje rezultat na domaćem tržištu.</div>
+</div>
+
+<h3>Srednji prioritet</h3>
+
+<div class="find">
+  <div class="hd"><span class="no">13</span><h3>34 stranice nisu prilagođene telefonu</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Na 34 adrese nedostaje <code>meta viewport</code> — stranica se otvara u verziji za računar, koju na telefonu treba razvlačiti prstima.</p>
+  <p class="what"><strong>Šta to znači.</strong> Google od 2019. ocenjuje sajtove prema mobilnoj verziji. U vašoj delatnosti udeo mobilnog saobraćaja obično je 65–80%: čovek gleda svoju terasu i tu odmah traži ko će mu uraditi ogradu. Stranica bez prilagođenja je za takvog posetioca praktično beskorisna.</p>
+  <div class="fix"><b>Rešenje</b>Dodati viewport u šablon, proveriti prelom na telefonu, naročito stranice sa galerijama.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">14</span><h3>268 slika bez alt atributa</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Po verziji sajta ima 1&nbsp;517 slika, od kojih 268 nema alt atribut (17%). U galerijama su opisi tipa „Gallery Item 1“. Na početnoj strani 13 slika od 99 je bez alt-a.</p>
+  <p class="what"><strong>Šta to znači.</strong> Vaše fotografije stvarnih objekata jedan su od najjačih aduta sajta. Pretraga po slikama u ovoj delatnosti funkcioniše: ljudi traže „staklene ograde terasa“ u slikama i dolaze na sajt. Bez alt atributa te slike za Google ne postoje — to je propušten besplatan saobraćaj. Uz to, 1&nbsp;504 interna linka bez teksta upravo su linkovi-slike bez alt-a.</p>
+  <div class="fix"><b>Rešenje</b>Upisati opisne alt atribute po šemi „šta je na slici + materijal + mesto“: <em>„Staklena ograda sa inox nosačima na terasi, stan u Novom Beogradu“</em>. Prioritet su slike na komercijalnim stranicama. Paralelno preimenovati datoteke i smanjiti ih.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">15</span><h3>156 stranica sa tankim sadržajem, 98 sa dupliranim tekstovima</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Na 156 adresa ima manje od 300 reči korisnog teksta. Najgori slučajevi: 29 reči osnovnog teksta pri 31 reči na stranici. Na 14 stranica — 64 reči teksta pri 295 reči na stranici: ostalo su meni i podnožje. Tekstovi 98 stranica poklapaju se sa tekstovima drugih stranica (uglavnom su to parovi „sa www“ i „bez www“, ali ne samo oni).</p>
+  <p class="what"><strong>Šta to znači.</strong> Stranica kategorije <code>/pregradni-zidovi</code> ima 64 reči sopstvenog teksta. Za pretragu „stakleni pregradni zidovi Beograd“ to nije dovoljno da bi se takmičila sa sajtovima koji imaju po 800–1&nbsp;200 reči sa opisom sistema, debljina stakla, rokova i cena.</p>
+  <div class="fix"><b>Rešenje</b>Prepisati 33 komercijalne stranice: po 600–1&nbsp;200 reči sa stvarnim informacijama — tipovi sistema, debljine i vrste stakla, varijante nosača, rokovi, od čega zavisi cena, česta pitanja. To je glavni posao meseci 4–8.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">16</span><h3>Spoljni linkovi ka ugašenim servisima i tuđim sajtovima</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Sajt postavlja 1&nbsp;269 spoljnih linkova. Raspodela: <code>facebook.com</code> — 233, <code>twitter.com</code> — 229, <code>instagram.com</code> — 159, <code>ithemeslab.com</code> (autor šablona) — 159, <code>pinterest.com</code> — 157, <code>plus.google.com</code> — 72, <code>linkedin.com</code> — 72, Joomla sajtovi — preko 100.</p>
+  <p class="what"><strong>Šta to znači.</strong> 72 linka vode ka Google+ servisu, koji je ugašen 2019. godine — to je 72 mrtva linka na svakoj stranici sajta. 159 linkova ka sajtu autora šablona je besplatna reklama tuđoj firmi sa svih vaših stranica. Preko 100 linkova ka joomla.org došlo je uz demo sadržaj. Ukupno, sajt rasipa snagu napolje umesto da je zadrži kod sebe.</p>
+  <div class="fix"><b>Rešenje</b>Ukloniti linkove ka Google+ i Joomli, ukloniti ili zatvoriti link ka autoru šablona, ostaviti samo aktivne društvene mreže — po jedan link u podnožju, a ne po sedam na svakoj stranici.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">17</span><h3>Nema bezbednosnih zaglavlja, 6 stranica sa mešanim sadržajem</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Na svih 193 adrese nedostaju Strict-Transport-Security, Content-Security-Policy, X-Frame-Options i X-Content-Type-Options. Na 6 stranica deo resursa (od 3 do 7 po stranici) učitava se preko <code>http://</code> unutar HTTPS stranice.</p>
+  <p class="what"><strong>Šta to znači.</strong> Mešani sadržaj znači da pregledač može prikazati upozorenje o nebezbednoj vezi ili jednostavno ne učitati deo slika. Nedostatak bezbednosnih zaglavlja nije direktan faktor rangiranja, ali u kombinaciji sa zastarelom Joomlom sve to zajedno predstavlja stvaran rizik.</p>
+  <div class="fix"><b>Rešenje</b>Dodati zaglavlja u konfiguraciju servera, pronaći sve HTTP resurse i prebaciti ih na HTTPS. Posao od nekoliko sati.</div>
+</div>
+
+<div class="find">
+  <div class="hd"><span class="no">18</span><h3>Firma nije prisutna u lokalnim imenicima</h3><span class="tag md">Srednji</span></div>
+  <p class="what">Provera imenika <a href="https://www.navidiku.rs/firme/staklene-ograde/beograd">navidiku.rs u sekciji „Staklene ograde Beograd“</a>: 9 firmi na spisku, Vodalux nije među njima. Konkurenti — AS GLASS (ocena 4,7), Vuxa, Fit In, Glass Urban, Staklo Kristal, Beostaklo — jesu, sa ocenama i stažom na portalu od 2 do 15 godina.</p>
+  <p class="what"><strong>Šta to znači.</strong> Za lokalne pretrage takvi imenici često stoje iznad sajtova samih firmi. Čovek koji traži „staklene ograde Beograd“ velikom verovatnoćom završi na tom spisku — a vas tamo nema. To nije SEO u užem smislu, ali jeste direktan kanal upita, i to besplatan ili skoro besplatan.</p>
+  <div class="fix"><b>Rešenje</b>Registracija i popunjavanje profila na navidiku.rs, planplus.rs, emajstor, 011info i u strukovnim imenicima. Svuda isti naziv, adresa i telefon — to je važno za lokalno rangiranje. Paralelno — Google poslovni profil sa fotografijama objekata, uslugama i radom na prikupljanju utisaka.</div>
+</div>
+</section>
+
+<hr>
+
+<section id="s6">
+<h2><span class="num">06</span>Šta na sajtu dobro funkcioniše</h2>
+
+<p>Analiza zvuči oštro, i to je pošteno. Ali važno je ne izgubiti iz vida drugu polovinu slike: imate adute koje većina konkurenata nema, i upravo zato rad na ovom sajtu ima smisla.</p>
+
+<div class="box good">
+  <div class="t">Jake strane</div>
+  <ul>
+    <li><strong>Domen sa istorijom i stvarnim pozicijama.</strong> Uprkos svemu nabrojanom, sajt se pojavljuje u rezultatima pretrage po komercijalnim pretragama — na primer, po pretragama o ceni staklenih ograda po dužnom metru u Beogradu. To znači da osnova već postoji i da je ne treba graditi iz nule. Ispravljanje tehničkih problema na takvoj osnovi deluje mnogo brže nego pokretanje novog domena.</li>
+    <li><strong>Veliki fond sopstvenih fotografija.</strong> 1&nbsp;517 slika, uglavnom stvarnih objekata: terase, stepeništa, balkoni, bazeni, poslovni prostori. To je glavni adut u vašoj delatnosti i nešto što se ne može kupiti ni brzo kopirati. Trenutno se koristi otprilike dvadeset posto.</li>
+    <li><strong>Cena je navedena otvoreno.</strong> „Od 200 € po dužnom metru“ na početnoj strani. Većina konkurenata cenu krije. Otvorena cena odseca neozbiljne upite i podiže poverenje — to ne treba ukloniti, nego razviti u punu sekciju „od čega zavisi cena“.</li>
+    <li><strong>Širok asortiman usluga.</strong> Ograde, prohrom i inox, aluminijum, pregradni zidovi, staklena vrata, tuš kabine, zastakljivanje terasa, ogledala, kuhinjska stakla. To je 8–9 nezavisnih grupa pretraga — veliko polje za rast bez širenja posla.</li>
+    <li><strong>Geografija van Beograda.</strong> Valjevo, Lazarevac, Ub, Šabac, Loznica, Čačak, Užice, Zlatibor, plus Crna Gora i Austrija. Stvaran domet je širi nego kod lokalnih konkurenata — uz pravu strukturu to su zasebne stranice sa niskom konkurencijom.</li>
+    <li><strong>Video i planovi za YouTube.</strong> Već snimate i planirate da razvijate taj pravac. Video na stranici duže zadržava posetioca, a uz ispravno označavanje ulazi u rezultate pretrage kao zaseban blok. To radi zajedno sa SEO-om, a ne paralelno s njim.</li>
+    <li><strong>Vi se sami bavite sajtom.</strong> To je retkost i mnogo olakšava posao: razumete o čemu se radi i možete brzo dati činjenice o objektima, materijalima i rokovima — ono što izvođač bez vas nema.</li>
+  </ul>
+</div>
+
+<p>Zaključak iz ova dva odeljka je sledeći: sajt ne treba graditi iznova. Treba ga rastaviti, očistiti i sastaviti kako valja — na temelju koji već postoji.</p>
+</section>
+
+<hr>
+
+<section id="s7">
+<h2><span class="num">07</span>Konkurencija i tržište</h2>
+
+<p>Pogledao sam ko zauzima rezultate pretrage po ključnim komercijalnim pretragama u Srbiji i zahvaljujući čemu.</p>
+
+<h3>Ko je u rezultatima pretrage</h3>
+<div class="tw"><table>
+<thead><tr><th>Sajt</th><th>U čemu je jak</th><th>Gde je slab</th></tr></thead>
+<tbody>
+<tr><td><a href="https://casa.co.rs/staklene-ograde-i-obloge/staklene-ograde/">casa.co.rs</a></td><td>WordPress sa urednom tehničkom osnovom: canonical, Open Graph, hijerarhija naslova, višejezičnost. Oko 30 fotografija sa smislenim nazivima datoteka. Cena je navedena — od 270 € po dužnom metru. Interno povezivanje ka potkategorijama.</td><td>Nema utisaka klijenata, nema FAQ sekcije, tehnički detalji su opisani površno, ima grešaka u tekstovima i adresama, copyright iz 2022.</td></tr>
+<tr><td><a href="https://www.staklenisistemi.com/kontakt/">staklenisistemi.com (Mont Glass)</a></td><td>Jaka faktografija: direktan uvoznik AGC i Saint-Gobain stakla, sopstveni centar za obradu stakla u Beogradu kapaciteta 16&nbsp;000 m² godišnje, distributer PARTHOS i HALUMM sistema, partner DORMA. Sekcija „Reference“, mikro-označavanje, sekcija vesti.</td><td>Cena nema, bloga nema, Open Graph opis je prazan, u meta podacima je smeće, linkovi ka Google+.</td></tr>
+<tr><td><a href="https://aldox.rs/tag/staklene-ograde/">aldox.rs</a></td><td>Jedini koji sistematski radi sadržajni marketing: tekstovi tipa „Od čega zavisi cena aluminijumske ograde po dužnom metru“, 10 podnaslova, oko 1&nbsp;000 reči, sveže objave iz 2026. Cena od 55 €/m u bočnom bloku, dugmad „Zahtev za ponudu“ i „Pošaljite brzi upit“.</td><td>Očigledni tragovi šablonske masovne proizvodnje: autor teksta naveden kao sasvim druga organizacija, u Open Graph-u opis od usluga taksija. Kvalitet izrade je nizak.</td></tr>
+<tr><td>Imenici: <a href="https://www.navidiku.rs/firme/staklene-ograde/beograd">navidiku.rs</a>, <a href="https://www.planplus.rs/beograd/zastakljivanje-terasa">planplus.rs</a>, emajstor</td><td>Zauzimaju gornje pozicije po lokalnim pretragama. 9 firmi u sekciji „Staklene ograde Beograd“ sa ocenama 4,0–5,0.</td><td>Vodalux u njima ne postoji.</td></tr>
+</tbody></table></div>
+
+<h3>Šta iz toga sledi</h3>
+<ul>
+  <li><strong>Lestvica je niska.</strong> Nijedan konkurent nije napravio pun komplet: cene + reference + utisci + FAQ + tehnička čistoća + lokalne stranice. Svaki od njih ima pokrivene dve-tri tačke od sedam. To je retka situacija — obično u delatnosti postoji bar jedan jak igrač koji drži sve.</li>
+  <li><strong>Sadržajni marketing je praktično slobodan.</strong> Tekstove sistematski piše samo aldox.rs, i to šablonski. Informativne pretrage — „koje staklo za ograde“, „kaljeno ili laminirano staklo“, „debljina stakla za ogradu“, „koliko košta staklena ograda“ — gotovo da nisu pokrivene kvalitetnim materijalima. Vi za to imate ono što konkurenti nemaju: sopstveno iskustvo u montaži i video.</li>
+  <li><strong>Fotografije su vaša prednost.</strong> casa.co.rs ima oko 30 slika. Vi ih imate hiljadu i po. Razlika je dva reda veličine. Treba samo omogućiti Google-u da ih vidi.</li>
+  <li><strong>Imenike treba pokriti prve.</strong> To je najbrži povraćaj iz celog plana: registracija u 5–6 imenika i popunjavanje Google poslovnog profila donose upite u roku od nekoliko nedelja, bez čekanja na ponovno indeksiranje.</li>
+  <li><strong>Stručnost se prodaje.</strong> Mont Glass ne pobeđuje SEO-om nego faktografijom: konkretni brendovi, konkretne količine, konkretna partnerstva. Vi imate čime da odgovorite — objekti u Srbiji, Crnoj Gori i Austriji — ali to trenutno nije formulisano na sajtu.</li>
+</ul>
+
+<h3>Grupe pretraga na kojima ćemo raditi</h3>
+<p>Listu ključnih reči tek treba prikupiti i precizirati prema podacima iz Search Console-a i Keyword Planner-a, ali struktura grupa vidi se već sada:</p>
+<div class="tw"><table>
+<thead><tr><th>Grupa</th><th>Primeri pretraga</th><th>Prioritet</th></tr></thead>
+<tbody>
+<tr><td>Staklene ograde</td><td>staklene ograde, staklene ograde cena, staklene ograde Beograd, staklene ograde za terasu / balkon / stepenice / bazen, staklene ograde bez stubova, ograde na tačkaste nosače, stakleni gelenderi</td><td><span class="tag cr">1</span></td></tr>
+<tr><td>Inox i prohrom</td><td>prohromske ograde, inox ograde, inox gelenderi, prohromski rukohvati, ograde od inoxa sa staklom</td><td><span class="tag cr">1</span></td></tr>
+<tr><td>Tuš kabine</td><td>tuš kabine po meri, stakla za tuš kabine, tuš paravani, ugradnja tuš kabina, kako skinuti kamenac sa stakla</td><td><span class="tag hi">2</span></td></tr>
+<tr><td>Pregradni zidovi i vrata</td><td>stakleni pregradni zidovi, kancelarije u staklu, staklena vrata, klizna staklena vrata, ordinacije u staklu</td><td><span class="tag hi">2</span></td></tr>
+<tr><td>Zastakljivanje terasa</td><td>zastakljivanje terasa, zastakljivanje vikendica, staklene bašte restorana</td><td><span class="tag hi">2</span></td></tr>
+<tr><td>Aluminijumski sistemi</td><td>aluminijumske ograde, alu profili za staklo, base shoe profil</td><td><span class="tag md">3</span></td></tr>
+<tr><td>Ogledala i kuhinjska stakla</td><td>ogledala po meri, ogledala sa LED rasvetom, uramljena ogledala, kuhinjska stakla, staklo u boji</td><td><span class="tag md">3</span></td></tr>
+<tr><td>Informativne pretrage</td><td>koje staklo za ograde, kaljeno ili laminirano, debljina stakla, koliko košta staklena ograda, propisi i bezbednost, održavanje</td><td><span class="tag hi">2</span></td></tr>
+<tr><td>Geografija</td><td>Beograd i opštine (Novi Beograd, Zemun, Voždovac, Vračar, Zvezdara, Čukarica), Novi Sad, Valjevo, Čačak, Zlatibor, Divčibare</td><td><span class="tag hi">2</span></td></tr>
+<tr><td>Izvoz</td><td>Crna Gora (Budva, Kotor, Herceg Novi, Sveti Stefan), Austrija (Beč)</td><td><span class="tag lo">4</span></td></tr>
+</tbody></table></div>
+<p class="small">Trenutna greška u pristupu geografiji: svi gradovi su nabrojani unutar jedne adrese i jednog opisa. To ne funkcioniše. Funkcioniše drugo — jedna stranica po gradu, i to samo za one gradove gde postoje izvedeni objekti i fotografije.</p>
+</section>
+
+<hr>
+
+<section id="s8">
+<h2><span class="num">08</span>Šta predlažem da radimo</h2>
+
+<h3>Red umesto selidbe</h3>
+<p>Moj predlog se od Goranovog razlikuje ne po obimu posla, nego po redosledu i prioritetima.</p>
+
+<div class="tw"><table>
+<thead><tr><th></th><th>Goranov predlog</th><th>Moj predlog</th></tr></thead>
+<tbody>
+<tr><td><strong>Korak 1</strong></td><td>Analiza i mapa migracije (250–400 €)</td><td>Tehničko sanitiranje postojećeg sajta: www verzije, preusmerenja, canonical, mapa sajta, brisanje 47 nepotrebnih stranica, vraćanje oštećenih datoteka, rezervne kopije</td></tr>
+<tr><td><strong>Korak 2</strong></td><td>Selidba na Laravel (1&nbsp;800–2&nbsp;800 €)</td><td>Meta podaci, struktura adresa, interno povezivanje, Google poslovni profil i imenici</td></tr>
+<tr><td><strong>Korak 3</strong></td><td>Prodavnica HomeProLine (2&nbsp;500–4&nbsp;500 €)</td><td>Lista ključnih reči, prepisivanje 33 komercijalne stranice, reference, utisci, cene, forme</td></tr>
+<tr><td><strong>Korak 4</strong></td><td>Video sekcija (600–1&nbsp;500 €)</td><td>Sadržaj, video, lokalne stranice, izgradnja linkova</td></tr>
+<tr><td><strong>Korak 5</strong></td><td>—</td><td>Odluka o novom sistemu i o prodavnici — na osnovu podataka koje ćemo do tada imati</td></tr>
+</tbody></table></div>
+
+<h3>Pitanje sistema se odlaže, a ne ukida</h3>
+<p>Ne tvrdim da Joomlu treba zadržati zauvek. Verzija je zastarela, datoteke jezgra su oštećene, i pre ili kasnije će se morati seliti. Ali:</p>
+<ul>
+  <li>Selidba trenutno <strong>ne rešava nijedan od 17 problema od ukupno 18</strong> koji stvarno koče rast sajta.</li>
+  <li>Za 6–9 meseci rada imaćemo ono čega sada nema: jasnu strukturu, prepisane tekstove, prikupljenu listu ključnih reči, podatke iz Search Console-a o tome koje stranice donose saobraćaj. Selidba sa takvom prtljagom je pažljiva operacija, a ne skok u mrak.</li>
+  <li>Do tada će biti jasno i nešto drugo: koji sistem je zapravo potreban. Ako se HomeProLine pokaže kao tražen — to je jedan scenario. Ako glavni tok ide kroz upite za montažu — drugi.</li>
+</ul>
+<p>Ako ipak odlučite da selite odmah — preporučio bih WordPress, a ne Laravel, iz razloga navedenih u odeljku 2. Ali i u tom slučaju prvo treba očistiti ono što se seli: inače ćete platiti prenos 47 stranica o Joomli i Miss Universe.</p>
+
+<h3>O HomeProLine-u</h3>
+<p>Ideja da se razdvoje sajt-izlog i prodavnica je ispravna. Ali redosled bih predložio drugačiji:</p>
+<ol>
+  <li>Prvo se vodalux.rs dovede u stanje u kom stabilno donosi upite. To daje uvid u stvarnu tražnju i, što je važnije, novac za sledeći korak.</li>
+  <li>Paralelno se na vodalux.rs napravi nekoliko stranica sa komponentama i formom za upit — bez korpe i plaćanja. To košta skoro ništa i za 2–3 meseca pokazuje da li uopšte postoji pretraga za kupovinom profila, nosača i stakla onlajn u Srbiji.</li>
+  <li>Ako se tražnja potvrdi — gradi se prodavnica, i to za konkretne proizvode koje ljudi traže, a ne za pretpostavku.</li>
+</ol>
+<p>Ukupno vam to može uštedeti upravo onu razliku između 4&nbsp;500 i 7&nbsp;500 €, a prodavnica će ispasti preciznija.</p>
+
+<h3>O videu i YouTube-u</h3>
+<p>Goran predlaže zasebnu sekciju za 600–1&nbsp;500 €. Tehnički je to nekoliko šablona stranica. Kod nas to ulazi u rad na sadržaju: snimci se ugrađuju u one stranice usluga na koje se odnose, označavaju se schema VideoObject oznakom, uz njih se pišu tekstualni prepisi i česta pitanja. Zasebna „video sekcija“ u koju niko ne ulazi nije potrebna — potrebno je da video radi na stranici koja prodaje.</p>
+</section>
+
+<hr>
+
+<section id="s9">
+<h2><span class="num">09</span>Plan na 12 meseci, 500 € mesečno</h2>
+
+<p>Ovo nije jedan čovek sa strane, nego raspoređen rad: tehnički stručnjak, urednik sadržaja koji piše i lektoriše specifikacije, stručnjak za linkove i lokalnu promociju, rukovodilac projekta. Poslovi su raspoređeni tako da ono najjeftinije sa najbržim povraćajem ide prvo.</p>
+
+<div class="tl">
+
+<div class="ph">
+<div class="per">Mesec 1 — zaustaviti gubitke</div>
+<h3>Tehničko sanitiranje</h3>
+<ul>
+  <li>Potpuna rezervna kopija sajta i baze, provera datoteka na zlonamerni kôd, vraćanje oštećenih datoteka Joomla jezgra</li>
+  <li>Izbor glavne verzije, 301 preusmerenje <code>www</code> → glavni domen (ili obrnuto)</li>
+  <li>Spajanje duplikata početne strane: <code>/</code>, <code>/index.php</code>, adresa bez kose crte</li>
+  <li>Canonical na svim stranicama kroz šablon</li>
+  <li>Brisanje 47 stranica demo sadržaja Joomle, kôd 410 ili 301 za svaku</li>
+  <li>17 praznih stranica: ispravan kôd odgovora ili 301 ka radnom ekvivalentu</li>
+  <li>Generisanje sitemap.xml samo sa potrebnim stranicama, robots.txt</li>
+  <li>Povezivanje i podešavanje Google Search Console-a (obe verzije) i Google Analytics 4, podešavanje ciljeva za upite i pozive</li>
+  <li>Bezbednosna zaglavlja, uklanjanje mešanog sadržaja</li>
+  <li>Meta viewport na 34 stranice</li>
+</ul>
+</div>
+
+<div class="ph">
+<div class="per">Mesec 2 — paralelno: brzi kanali</div>
+<h3>Meta podaci, struktura i lokalno prisustvo</h3>
+<ul>
+  <li>Jedinstveni naslovi, H1 i opisi za 33 komercijalne stranice</li>
+  <li>Jedan H1 po stranici, uklanjanje višestrukih H1 na 101 adresi</li>
+  <li>Mapa novih kratkih adresa i 301 sa starih</li>
+  <li>Preuređenje internog povezivanja: hijerarhija, navigacione putanje, skraćivanje prolaznog menija</li>
+  <li>Čišćenje spoljnih linkova: Google+, joomla.org, sajt autora šablona</li>
+  <li>Alt atributi za slike na komercijalnim stranicama, preimenovanje i smanjivanje datoteka</li>
+  <li>Google poslovni profil: popunjavanje, kategorije, usluge, fotografije objekata, radno vreme, pokretanje prikupljanja utisaka</li>
+  <li>Registracija na navidiku.rs, planplus.rs, emajstor, 011info i u strukovnim imenicima sa jedinstvenim podacima</li>
+  <li>Odluka o sekciji na engleskom i o sekciji PVC stolarije</li>
+</ul>
+</div>
+
+<div class="ph">
+<div class="per">Mesec 3 — razumeti gde je novac</div>
+<h3>Lista ključnih reči i mapa relevantnosti</h3>
+<ul>
+  <li>Prikupljanje liste ključnih reči: Keyword Planner, Search Console, rezultati pretrage, konkurenti, predlozi pretrage</li>
+  <li>Klasterizacija po 10 pravaca iz odeljka 7</li>
+  <li>Mapa relevantnosti: koja grupa pretraga pripada kojoj stranici</li>
+  <li>Utvrđivanje praznina: pretrage za koje stranice ne postoje</li>
+  <li>Snimanje početnih pozicija — polazna tačka od koje ćemo meriti</li>
+  <li>Specifikacije za prvih 6–8 stranica</li>
+</ul>
+</div>
+
+<div class="ph">
+<div class="per">Meseci 4–6 — ono što prodaje</div>
+<h3>Sadržaj i komercijalni faktori</h3>
+<ul>
+  <li>Prepisivanje komercijalnih stranica po specifikaciji: 2–3 stranice mesečno, po 600–1&nbsp;200 reči</li>
+  <li>Sekcija „od čega zavisi cena“ sa kalkulatorom ili tabelom raspona</li>
+  <li>Reference izvedenih objekata: fotografije, dužni metri, sistem, staklo, rok, grad</li>
+  <li>Prikupljanje i objavljivanje utisaka, povezivanje Google ocena</li>
+  <li>Forme za upit na svakoj komercijalnoj stranici, dugmad za poziv, WhatsApp i Viber</li>
+  <li>Mikro-označavanje: LocalBusiness, Service, FAQPage, BreadcrumbList, ImageObject</li>
+  <li>Kompresija i odloženo učitavanje slika, rad na brzini</li>
+  <li>Alt atributi za preostale slike</li>
+</ul>
+</div>
+
+<div class="ph">
+<div class="per">Meseci 7–9 — širenje dometa</div>
+<h3>Informativni sadržaj, video, lokalne stranice</h3>
+<ul>
+  <li>FAQ i tekstovi za informativne pretrage: vrste stakla, debljine, nosači, bezbednost, propisi, održavanje — 2 materijala mesečno</li>
+  <li>Ugrađivanje YouTube snimaka u odgovarajuće stranice usluga, VideoObject označavanje, tekstualni prepisi</li>
+  <li>Lokalne stranice po beogradskim opštinama i gradovima u kojima postoje objekti — 3–5 stranica</li>
+  <li>Izgradnja linkova: strukovni imenici, partneri (arhitekte, dizajneri enterijera, građevinske firme), pominjanja u tematskim tekstovima</li>
+  <li>Prva revizija plana prema podacima iz Search Console-a: šta je dalo rezultat, šta nije</li>
+</ul>
+</div>
+
+<div class="ph">
+<div class="per">Meseci 10–12 — širenje obima</div>
+<h3>Novi pravci i odluka o razvoju</h3>
+<ul>
+  <li>Razrada izvoznih pravaca: Crna Gora i Austrija — zasebna struktura, ispravan hreflang</li>
+  <li>Širenje na grupe pretraga drugog prioriteta: pregradni zidovi, ogledala, kuhinjska stakla</li>
+  <li>Stranice komponenti sa formom za upit — provera tražnje za HomeProLine</li>
+  <li>Odluka o sistemu i o prodavnici — na osnovu stvarnih podataka</li>
+  <li>Godišnji izveštaj i plan za narednu godinu</li>
+</ul>
+</div>
+
+</div>
+
+<h3>Šta ulazi u 500 € mesečno</h3>
+<div class="tw"><table>
+<thead><tr><th>Oblast</th><th>Šta konkretno</th></tr></thead>
+<tbody>
+<tr><td>Tehnička optimizacija</td><td>Sve iz „Faze 1“ i polovine „Faze 2“ Goranove ponude — unutar mesečnog rada, bez posebnog računa</td></tr>
+<tr><td>Ključne reči</td><td>Prikupljanje, klasterizacija, mapa relevantnosti, održavanje i širenje</td></tr>
+<tr><td>Sadržaj</td><td>Specifikacije, pisanje, lektura, objavljivanje, optimizacija postojećih stranica</td></tr>
+<tr><td>Komercijalni faktori</td><td>Cene, reference, utisci, forme, dugmad za kontakt, mikro-označavanje</td></tr>
+<tr><td>Lokalni SEO</td><td>Google poslovni profil, imenici, jedinstveni podaci firme, rad na utiscima</td></tr>
+<tr><td>Linkovi</td><td>Imenici, partnerska postavljanja, pominjanja</td></tr>
+<tr><td>Analitika</td><td>Search Console, Analytics, snimanje pozicija, mesečni izveštaj sa brojkama i planom za naredni mesec</td></tr>
+</tbody></table></div>
+
+<div class="box warn">
+  <div class="t">Šta ne ulazi u 500 €</div>
+  <p>Da ne bi bilo nesporazuma: razvoj internet prodavnice iz nule, snimanje videa, Google Ads oglašavanje, dizajnerski redizajn sajta i kupovina plaćenih linkova ne ulaze u ovaj budžet. Ako nešto od toga zatreba — dogovara se posebno, i unapred ću vam reći da li je uopšte potrebno.</p>
+</div>
+</section>
+
+<hr>
+
+<section id="s10">
+<h2><span class="num">10</span>Šta realno očekivati</h2>
+
+<div class="box">
+  <div class="t">Poštena ograda</div>
+  <p>Dok nemam pristup Google Search Console-u i Analytics-u, ne znam trenutne brojke: koliko prikaza i klikova sajt dobija, po kojim pretragama, koliko upita stiže iz pretrage. Zato dole ne stoji obećanje konkretnih brojeva, nego opis onoga što se dešava u svakoj fazi i račun isplativosti u koji ćete sami uneti svoje cifre.</p>
+  <p>Prvo što ću uraditi na početku jeste povezati Search Console i dati polaznu tačku. Posle toga prognoza postaje brojčana.</p>
+</div>
+
+<h3>Po kvartalima</h3>
+
+<div class="tw"><table>
+<thead><tr><th>Period</th><th>Šta se dešava</th><th>Kako to izgleda u brojkama</th></tr></thead>
+<tbody>
+<tr>
+  <td><strong>Meseci 1–3</strong></td>
+  <td>Čišćenje indeksa i tehnička osnova. Google ponovo obilazi sajt, izbacuje obrisane stranice, spaja duplikate.</td>
+  <td><strong>Broj stranica u indeksu će pasti</strong> — otprilike sa 193 na 50–60. To je normalno i to je cilj, a ne problem. Saobraćaj pritom ne pada, jer odlaze stranice koje ga nisu ni donosile. Prve pozicije počinju da se popravljaju pred kraj perioda, zahvaljujući spajanju <code>www</code> verzija.</td>
+</tr>
+<tr>
+  <td><strong>Meseci 2–4</strong></td>
+  <td>Lokalni kanali: Google poslovni profil i imenici.</td>
+  <td>Najbrži povraćaj u celom planu. Pozivi i poruke sa mapa i iz imenika stižu ne čekajući ponovno indeksiranje — obično prvi u roku od 3–6 nedelja nakon popunjavanja profila.</td>
+</tr>
+<tr>
+  <td><strong>Meseci 4–6</strong></td>
+  <td>Prepisane stranice počinju da rade. Komercijalni faktori podižu konverziju postojećeg saobraćaja.</td>
+  <td>Rast pozicija po srednje- i niskofrekventnim pretragama. Deo upita ne dolazi od rasta saobraćaja, nego od toga što su se na stranici pojavili cena, forme i dugme za poziv.</td>
+</tr>
+<tr>
+  <td><strong>Meseci 6–9</strong></td>
+  <td>Informativni sadržaj i video dovode publiku u ranoj fazi odlučivanja. Lokalne stranice pokrivaju opštine i gradove.</td>
+  <td>Primetan rast organskog saobraćaja. Pojavljivanje sajta po pretragama po kojima ga ranije uopšte nije bilo. Širenje skupa stranica koje donose posete.</td>
+</tr>
+<tr>
+  <td><strong>Meseci 9–12</strong></td>
+  <td>Takmičenje za vrh po glavnim komercijalnim pretragama u Beogradu. Izgradnja linkova i izvozni pravci.</td>
+  <td>Cilj perioda su stabilne pozicije u prvih 10 rezultata po jezgru pretraga iz grupa 1 i 2 i predvidiv tok upita koji se može planirati.</td>
+</tr>
+</tbody></table></div>
+
+<h3>Isplativost</h3>
+<p>To se računa lakše od saobraćaja. Uzmimo vaše brojke: staklena ograda od 200 € po dužnom metru, tipičan objekat oko 10 metara, dakle oko 2&nbsp;000 € po poslu. Udeo koji vama ostaje posle materijala i radova unesite svoj — ja sam uzeo 30% kao primer.</p>
+
+<div class="tw"><table>
+<thead><tr><th class="num">Dodatnih upita mesečno</th><th class="num">Poslova pri konverziji 25%</th><th class="num">Promet</th><th class="num">Zarada pri 30%</th><th>Rezultat</th></tr></thead>
+<tbody>
+<tr><td class="num">2</td><td class="num">0,5</td><td class="num">1 000 €</td><td class="num">300 €</td><td>Ne isplati se</td></tr>
+<tr><td class="num">4</td><td class="num">1,0</td><td class="num">2 000 €</td><td class="num">600 €</td><td>Isplati se, mali plus</td></tr>
+<tr><td class="num">6</td><td class="num">1,5</td><td class="num">3 000 €</td><td class="num">900 €</td><td>Isplati se 1,8 puta</td></tr>
+<tr><td class="num">10</td><td class="num">2,5</td><td class="num">5 000 €</td><td class="num">1 500 €</td><td>Isplati se 3 puta</td></tr>
+<tr><td class="num">15</td><td class="num">3,75</td><td class="num">7 500 €</td><td class="num">2 250 €</td><td>Isplati se 4,5 puta</td></tr>
+</tbody></table></div>
+
+<p><strong>Tačka pokrića je otprilike jedan dodatan posao mesečno.</strong> Za sajt koji je već u indeksu, koji već ima pozicije po komercijalnim pretragama, a kome je pritom polovina stranica otpad i početna strana razmazana po osam adresa — to je niska lestvica. Sve preko jednog posla je čista zarada.</p>
+
+<p class="small">Ako je vaša prosečna vrednost posla veća od 2&nbsp;000 € (a kod ograđivanja terase ili stepeništa u porodičnoj kući verovatno jeste), tačka pokrića se pomera još niže.</p>
+
+<h3>Šta ne obećavam</h3>
+<ul>
+  <li><strong>Prvo mesto na Google-u.</strong> To niko ne može garantovati, a ako neko garantuje — to je razlog za oprez.</li>
+  <li><strong>Brz rezultat u prvom mesecu.</strong> Prvih 4–8 nedelja odlazi na to da Google ponovo obiđe sajt i vidi izmene. Izuzetak su lokalni kanali, oni rade brže.</li>
+  <li><strong>Linearan rast.</strong> SEO raste stepenasto, sa pauzama i ponekad sa privremenim padovima posle većih izmena. To je normalna dinamika.</li>
+  <li><strong>Rezultat bez vašeg učešća.</strong> Trebaće mi fotografije objekata, odgovori na tehnička pitanja i odobravanje tekstova. Bez činjenica od vas, stranice će ispasti isto onako uopštene kao kod konkurencije.</li>
+</ul>
+</section>
+
+<hr>
+
+<section id="s11">
+<h2><span class="num">11</span>Šta mi je potrebno od vas</h2>
+
+<h3>Pristupi — na početku</h3>
+<div class="tw"><table>
+<thead><tr><th>Šta</th><th>Zašto</th><th>Kada</th></tr></thead>
+<tbody>
+<tr><td>Google Search Console</td><td>Da vidim trenutne prikaze, klikove, pretrage i greške indeksiranja. Bez toga prognoza ostaje opisna, a ne brojčana.</td><td>Prvo</td></tr>
+<tr><td>Google Analytics</td><td>Da razumem ponašanje posetilaca i izvore upita</td><td>Prvo</td></tr>
+<tr><td>Joomla administracija</td><td>Izmena meta podataka, brisanje nepotrebnih stranica, SEO podešavanja</td><td>1. nedelja</td></tr>
+<tr><td>Hosting / FTP / kontrolni panel</td><td>Preusmerenja, bezbednosna zaglavlja, robots.txt, rezervne kopije, vraćanje oštećenih datoteka</td><td>1. nedelja</td></tr>
+<tr><td>Google poslovni profil</td><td>Popunjavanje profila, fotografije, utisci</td><td>2. nedelja</td></tr>
+<tr><td>Pristup domenu (DNS)</td><td>Može zatrebati za podešavanje www verzija</td><td>Po potrebi</td></tr>
+</tbody></table></div>
+
+<h3>Informacije — tokom rada</h3>
+<ul>
+  <li><strong>Fotografije izvedenih objekata</strong> sa kratkim opisom: gde, koji sistem, koliko metara, koje staklo, koliko je trajalo. To je osnova za reference, i to je ono što konkurenti ne mogu dati.</li>
+  <li><strong>Stvarni rasponi cena</strong> po tipovima sistema. Ne moraju biti tačni — dovoljan je raspon „od i do“ sa objašnjenjem od čega zavisi.</li>
+  <li><strong>Odgovori na tehnička pitanja</strong> — koje debljine i vrste stakla koristite, kakve nosače, koji su rokovi, da li postoji garancija, koje standarde poštujete. Iz toga se gradi stručnost koju vide i Google i klijent.</li>
+  <li><strong>Geografija stvarnog rada.</strong> U koje gradove zaista izlazite. Praviti stranicu za grad u koji nećete otići nema smisla.</li>
+  <li><strong>Odluka o tržištu SAD</strong> — radite tamo ili ne. Od toga zavisi sudbina 10 stranica na engleskom.</li>
+  <li><strong>Odluka o sekciji PVC stolarije.</strong> U Google indeksu postoje stranice <code>/index.php/pvc-prozori/…</code> o PVC prozorima i subvencijama za zamenu stolarije. To je zasebna tema koja razvodnjava relevantnost sajta. Treba utvrditi da li je još uvek aktuelna za vas.</li>
+  <li><strong>Odobravanje tekstova.</strong> Mi pišemo, vi proveravate činjenice. Obično je to 20–30 minuta po stranici.</li>
+</ul>
+
+<h3>Kako će rad biti organizovan</h3>
+<ul>
+  <li>Na početku meseca — plan rada za taj mesec sa konkretnim zadacima.</li>
+  <li>Na kraju meseca — izveštaj: šta je urađeno, šta se promenilo u brojkama (pozicije, prikazi, klikovi, upiti), šta radimo dalje.</li>
+  <li>Sve izmene na sajtu — uz prethodnu rezervnu kopiju.</li>
+  <li>Komunikacija — kanalom koji vama odgovara, bez fiksnih sastanaka.</li>
+</ul>
+</section>
+
+<hr>
+
+<section id="s12">
+<h2><span class="num">12</span>Prilog: tabele</h2>
+<p>Podaci iz potpunog obilaska sajta. Ispod su adrese bez <code>www</code> i bez prefiksa <code>/index.php</code> — radi čitljivosti. U stvarnosti svaki red postoji u četiri varijante: sa <code>www</code> i bez, sa <code>/index.php</code> i bez.</p>
+<p class="small">Problemi <code>CANONICAL_MISSING</code> i <code>SECURITY_HEADERS_MISSING</code> se u tabelama ne ponavljaju — odnose se na svih 193 adrese bez izuzetka.</p>
+<h3>A. Komercijalne stranice — sačuvati i preraditi (35)</h3>
+<div class="tw"><table>
+<thead><tr><th>Adresa</th><th>Naslov</th><th class="num">Reči</th><th class="num">Slika / bez alt</th><th>Problemi</th></tr></thead>
+<tbody>
+<tr><td><code>/staklene-ograde/staklene-ograde-ograde-od-stakla-staklene-ograde-na-stepen…</code></td><td>Staklene ograde i gelenderi</td><td class="num">5818</td><td class="num">99 / 13</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, više H1</td></tr>
+<tr><td><code>/staklene-ograde/staklene-ograde-ograde-od-stakla-staklene-ograde-na-stepen…</code></td><td>Staklene ograde i gelenderi</td><td class="num">5818</td><td class="num">99 / 13</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, više H1</td></tr>
+<tr><td><code>/staklene-ograde/staklene-ograde-u-zemlji-i-inostranstvu-ugradnja-staklenih…</code></td><td>Staklene ograde u zemlji i inostranstvu</td><td class="num">3631</td><td class="num">61 / 11</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, naslov=opis, nema alt, predug opis, više H1</td></tr>
+<tr><td><code>/pregradni-zidovi/staklena-vrata-klatna-vrata-staklena-vrata-na-tus-kabini-…</code></td><td>Staklena vrata u enterijeru</td><td class="num">2353</td><td class="num">43 / 8</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, više H1</td></tr>
+<tr><td><code>/staklene-ograde/prohromske-ograde-ograde-na-terasi-prohrom-bruseni-prohrom…</code></td><td>Prohromske - Inox Ograde</td><td class="num">1081</td><td class="num">24 / 5</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, više H1</td></tr>
+<tr><td><code>/europe-kontakt/staklene-ograde-crna-gora-staklene-ograde-na-moru-staklene-…</code></td><td>STAKLENE OGRADE CRNA GORA</td><td class="num">971</td><td class="num">34 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, više H1</td></tr>
+<tr><td><code>/europe-kontakt/staklene-konstrukcije-austrija-staklene-ograde-u-austriji-s…</code></td><td>Staklene konstrukcije u Austriji</td><td class="num">927</td><td class="num">13 / 3</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, nema alt, predug opis, više H1</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/tus-paravan-tus-parava…</code></td><td>Tuš paravani</td><td class="num">793</td><td class="num">46 / 4</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, mešani sadržaj, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/namestaj-kuhinje-enetrijer-kupatila-arhitekte-dizajn-stil-moda-trendovi</code></td><td>O Nama/About Us</td><td class="num">670</td><td class="num">8 / 2</td><td class="small">duplikat naslova, duplikat teksta, kratak naslov, nema alt, nema opis</td></tr>
+<tr><td><code>/staklene-ograde</code></td><td>Ograde</td><td class="num">664</td><td class="num">42 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, više H1</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/tus-kabine-po-meri-beo…</code></td><td>Tuš kabine po meri</td><td class="num">611</td><td class="num">39 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj, više H1</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/ugradnja-tus-kabina-tu…</code></td><td>Ugradnja tuš kabina</td><td class="num">586</td><td class="num">37 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/pregradni-zidovi/stakleni-paravani-tus-paravani-stakleni-zidovi-pregradni-…</code></td><td>Pregradni zidovi i paravani od stakla</td><td class="num">523</td><td class="num">24 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, naslov=opis, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/pregradni-zidovi/zastakljivanje-terasa-basti-restorana-zastakljivanje-vike…</code></td><td>Zastakljivanje terasa</td><td class="num">480</td><td class="num">8 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/orzavanje-tus-kabina-t…</code></td><td>Održavanje tuš kabina</td><td class="num">410</td><td class="num">14 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, mešani sadržaj, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/pregradni-zidovi</code></td><td>Pregradni zidovi</td><td class="num">380</td><td class="num">19 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/uramljena-ogledala-ogledala-u-kup…</code></td><td>Uramljena ogledala</td><td class="num">370</td><td class="num">26 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine</code></td><td>Kupatila</td><td class="num">353</td><td class="num">5 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala</code></td><td>Room Inspiration</td><td class="num">339</td><td class="num">16 / 2</td><td class="small">duplikat naslova, kratak naslov, nema alt, nema opis, tanak sadržaj</td></tr>
+<tr><td><code>/staklene-ograde/staklene-ograde-galerija-ugradnja-staklenih-ograda-srbija-…</code></td><td>Staklene ograde galerija</td><td class="num">324</td><td class="num">18 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/kuhinje/kuhinjska-stakla-stakla-z…</code></td><td>Kuhinjska stakla</td><td class="num">317</td><td class="num">15 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/stakla-za-tus-kabine-b…</code></td><td>Stakla za tuš kabine</td><td class="num">304</td><td class="num">14 / 2</td><td class="small">duplikat naslova, duplikat opisa, duplikat teksta, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/staklene-ograde/staklene-ograde-ograde-od-stakla-staklene-ograde-na-stepen…</code></td><td>Profili za staklene ograde</td><td class="num">295</td><td class="num">2 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/staklene-ograde/ugradnja-prohromskih-ograda-srbija-beograd-valjevo-lazarev…</code></td><td>Ugradnja prohromskih ograda</td><td class="num">295</td><td class="num">2 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/staklene-ograde/ugradnja-staklenih-ograda-srbija-beograd-valjevo-lazarevac…</code></td><td>ugradnja staklenih ograda</td><td class="num">295</td><td class="num">2 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/tus-kabine-galerija-sr…</code></td><td>Tuš kabine galerija</td><td class="num">295</td><td class="num">31 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/tus-kabine/sredstvo-za-odrzavanje…</code></td><td>Tip Top Kupatila</td><td class="num">295</td><td class="num">2 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, predug opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/kuhinje</code></td><td>Kuhinje</td><td class="num">295</td><td class="num">14 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, prekratak opis, tanak sadržaj</td></tr>
+<tr><td><code>/ogledala-u-enterijeru-uramljena-ogledala/ogledala-ogledala-u-kupatilu-ogle…</code></td><td>Ogledala u kupatilu</td><td class="num">295</td><td class="num">14 / 2</td><td class="small">duplikat naslova, duplikat opisa, kratak naslov, nema alt, tanak sadržaj</td></tr>
+<tr><td><code>/tus-kabine/tus-paravan-tus-paravani-stakleni-paravani-stakla-za-tus-kabine…</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+<tr><td><code>/tus-kabine/tus-kabine-po-meri-beograd-srbija-stakla-za-tus-kabine-beograd-…</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+<tr><td><code>/tus-kabine/stakla-za-tus-kabine-beograd-srbija-valjevo-lazarevac-novi-sad-…</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+<tr><td><code>/kuhinje/kuhinjska-stakla-stakla-za-kuhinje-staklo-u-boji-fotografije-na-st…</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+<tr><td><code>/tus-kabine/ugradnja-tus-kabina-tus-kabine-stakla-za-tus-kabine-beograd-srb…</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+<tr><td><code>/welcome.html</code></td><td>—</td><td class="num">31</td><td class="num">0 / 0</td><td class="small">duboko ugnežđena, nema H1, nema Open Graph, nema naslov, nema opis, nema viewport, tanak sadržaj</td></tr>
+</tbody></table></div>
+<h3>B. Demo sadržaj Joomle — obrisati (47)</h3>
+<p>Ove stranice su došle uz šablon. Sa vašim poslom nemaju veze, ali se indeksiraju i troše budžet obilaska.</p>
+<div class="tw"><table>
+<thead><tr><th>Adresa</th><th>Naslov</th><th class="num">Reči</th></tr></thead>
+<tbody>
+<tr><td><code>/component/content/article/19-joomla/21-getting-help?Itemid=535</code></td><td>vodalux</td><td class="num">394</td></tr>
+<tr><td><code>/component/content/article/19-joomla/22-getting-started?Itemid=535</code></td><td>vodalux</td><td class="num">715</td></tr>
+<tr><td><code>/component/content/article/19-joomla/24-joomla?Itemid=535</code></td><td>vodalux</td><td class="num">434</td></tr>
+<tr><td><code>/component/content/article/19-joomla/32-options?Itemid=535</code></td><td>vodalux</td><td class="num">465</td></tr>
+<tr><td><code>/component/content/article/19-joomla/35-professionals?Itemid=535</code></td><td>vodalux</td><td class="num">469</td></tr>
+<tr><td><code>/component/content/article/19-joomla/38-sample-sites?Itemid=535</code></td><td>vodalux</td><td class="num">516</td></tr>
+<tr><td><code>/component/content/article/19-joomla/47-the-joomla-community?Itemid=535</code></td><td>vodalux</td><td class="num">454</td></tr>
+<tr><td><code>/component/content/article/19-joomla/48-the-joomla-project?Itemid=535</code></td><td>vodalux</td><td class="num">533</td></tr>
+<tr><td><code>/component/content/article/19-joomla/50-upgraders?Itemid=535</code></td><td>vodalux</td><td class="num">381</td></tr>
+<tr><td><code>/component/content/article/19-joomla/53-using-joomla?Itemid=535</code></td><td>vodalux</td><td class="num">426</td></tr>
+<tr><td><code>/component/content/article/19-joomla/8-beginners?Itemid=535</code></td><td>vodalux</td><td class="num">592</td></tr>
+<tr><td><code>/component/content/article/19-joomla/82-vodalux-premium-glass-railing-archi…</code></td><td>vodalux</td><td class="num">524</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>vodalux</td><td class="num">420</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>vodalux</td><td class="num">672</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Media Manager - Page 2</td><td class="num">401</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Extensions Manager - Page 3</td><td class="num">405</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Menu Manager - Page 4</td><td class="num">398</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Global Configuration - Page 5</td><td class="num">441</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Banners - Page 6</td><td class="num">404</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/1-administrator-components?…</code></td><td>Redirect - Page 7</td><td class="num">407</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/10-content?Itemid=535</code></td><td>vodalux</td><td class="num">389</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/39-search-component?Itemid=535</code></td><td>vodalux</td><td class="num">471</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/52-users-component?Itemid=535</code></td><td>vodalux</td><td class="num">402</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/60-news-feeds?Itemid=535</code></td><td>vodalux</td><td class="num">408</td></tr>
+<tr><td><code>/component/content/article/21-joomla/components/9-contact?Itemid=535</code></td><td>vodalux</td><td class="num">372</td></tr>
+<tr><td><code>/component/content/article/79-blog/71-twitter-post-integration?Itemid=535</code></td><td>vodalux</td><td class="num">502</td></tr>
+<tr><td><code>/component/content/article/79-blog/72-fireworks-are-becoming-lethal?Itemid=535</code></td><td>vodalux</td><td class="num">351</td></tr>
+<tr><td><code>/component/content/article/79-blog/73-reach-out-touch-someone?Itemid=535</code></td><td>vodalux</td><td class="num">513</td></tr>
+<tr><td><code>/component/content/article/79-blog/74-using-image-slider-is-easier?Itemid=535</code></td><td>vodalux</td><td class="num">507</td></tr>
+<tr><td><code>/component/content/article/79-blog/75-5-effective-email-unsubscribe-pages?I…</code></td><td>vodalux</td><td class="num">506</td></tr>
+<tr><td><code>/component/content/article/79-blog/76-who-actually-clicks-on-banner-ads?Ite…</code></td><td>vodalux</td><td class="num">505</td></tr>
+<tr><td><code>/component/content/article/79-blog/77-see-the-new-miss-universe-get-her-cro…</code></td><td>vodalux</td><td class="num">568</td></tr>
+<tr><td><code>/component/content/article/79-blog/78-clean-responsive-multipurpse?Itemid=535</code></td><td>vodalux</td><td class="num">506</td></tr>
+<tr><td><code>/component/content/article/79-blog/79-best-in-the-business?Itemid=535</code></td><td>vodalux</td><td class="num">471</td></tr>
+<tr><td><code>/component/content/article/79-blog/80-most-popular-template?Itemid=535</code></td><td>vodalux</td><td class="num">352</td></tr>
+<tr><td><code>/component/content/article/79-blog/81-wedding-is-tougher-now?Itemid=535</code></td><td>vodalux</td><td class="num">506</td></tr>
+<tr><td><code>/component/content/category/19-joomla?Itemid=535</code></td><td>Joomla!</td><td class="num">1089</td></tr>
+<tr><td><code>/component/content/category/21-joomla/components?Itemid=535</code></td><td>—</td><td class="num">31</td></tr>
+<tr><td><code>/component/content/category/79-blog?Itemid=535</code></td><td>Blog</td><td class="num">606</td></tr>
+<tr><td><code>/component/tags/tag/clean</code></td><td>clean</td><td class="num">313</td></tr>
+<tr><td><code>/component/tags/tag/creative</code></td><td>creative</td><td class="num">315</td></tr>
+<tr><td><code>/component/tags/tag/drupal</code></td><td>drupal</td><td class="num">321</td></tr>
+<tr><td><code>/component/tags/tag/envato</code></td><td>envato</td><td class="num">324</td></tr>
+<tr><td><code>/component/tags/tag/joomla</code></td><td>joomla</td><td class="num">315</td></tr>
+<tr><td><code>/component/tags/tag/retina</code></td><td>retina</td><td class="num">315</td></tr>
+<tr><td><code>/component/tags/tag/themes</code></td><td>themes</td><td class="num">313</td></tr>
+<tr><td><code>/component/tags/tag/twitter</code></td><td>twitter</td><td class="num">321</td></tr>
+</tbody></table></div>
+<h3>C. Prazne stranice koje vraćaju kôd 200 (17)</h3>
+<p>Stranica zapravo nema, ali server javlja da je sve u redu. Potreban je kôd 404, 410 ili preusmerenje ka radnom ekvivalentu.</p>
+<div class="tw"><table>
+<thead><tr><th>Adresa</th><th class="num">Dužina URL-a</th><th class="num">Dolaznih linkova</th></tr></thead>
+<tbody>
+<tr><td><code>/europe-kontakt/glass-railings-texas-houston-dallas-houston-austin-premium-…</code></td><td class="num">1053</td><td class="num">6</td></tr>
+<tr><td><code>/europe-kontakt/glass-railings-texas-houston-dallas-houston-austin-premium-…</code></td><td class="num">1053</td><td class="num">6</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td class="num">1053</td><td class="num">1</td></tr>
+<tr><td><code>/europe-kontakt/glass-railing-texas-glass-dallas-glass-railing-houston-glas…</code></td><td class="num">845</td><td class="num">1</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td class="num">845</td><td class="num">1</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td class="num">845</td><td class="num">1</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td class="num">845</td><td class="num">2</td></tr>
+<tr><td><code>/europe-kontakt/customizing-ideas-for-residential-and-commercial-glass-balu…</code></td><td class="num">444</td><td class="num">0</td></tr>
+<tr><td><code>/tus-kabine/tus-paravan-tus-paravani-stakleni-paravani-stakla-za-tus-kabine…</code></td><td class="num">279</td><td class="num">0</td></tr>
+<tr><td><code>/tus-kabine/tus-kabine-po-meri-beograd-srbija-stakla-za-tus-kabine-beograd-…</code></td><td class="num">270</td><td class="num">0</td></tr>
+<tr><td><code>/tus-kabine/ugradnja-tus-kabina-tus-kabine-stakla-za-tus-kabine-beograd-srb…</code></td><td class="num">267</td><td class="num">0</td></tr>
+<tr><td><code>/kuhinje/kuhinjska-stakla-stakla-za-kuhinje-staklo-u-boji-fotografije-na-st…</code></td><td class="num">262</td><td class="num">0</td></tr>
+<tr><td><code>/tus-kabine/stakla-za-tus-kabine-beograd-srbija-valjevo-lazarevac-novi-sad-…</code></td><td class="num">236</td><td class="num">0</td></tr>
+<tr><td><code>/component/content/category/21-joomla/components?Itemid=535</code></td><td class="num">87</td><td class="num">15</td></tr>
+<tr><td><code>/welcome.html</code></td><td class="num">41</td><td class="num">1</td></tr>
+<tr><td><code>?Itemid=243</code></td><td class="num">39</td><td class="num">1</td></tr>
+<tr><td><code>?Itemid=429</code></td><td class="num">39</td><td class="num">1</td></tr>
+</tbody></table></div>
+<h3>D. Stranice na engleskom za tržište SAD (10)</h3>
+<p>Potrebna je vaša odluka: izdvojiti na zaseban domen ili ukloniti.</p>
+<div class="tw"><table>
+<thead><tr><th>Adresa</th><th>Naslov</th><th class="num">Reči</th><th class="num">Dužina URL-a</th></tr></thead>
+<tbody>
+<tr><td><code>/europe-kontakt/glass-railing-texas-glass-dallas-glass-railing-houston-glas…</code></td><td>Modern Glass Railings</td><td class="num">6149</td><td class="num">444</td></tr>
+<tr><td><code>/europe-kontakt/glass-railings-houston-glass-railings-dallas-glass-railings…</code></td><td>Glass Railing Balustrade</td><td class="num">3185</td><td class="num">158</td></tr>
+<tr><td><code>/europe-kontakt/glass-railings-texas-houston-dallas-houston-austin-premium-…</code></td><td>—</td><td class="num">31</td><td class="num">1053</td></tr>
+<tr><td><code>/europe-kontakt/glass-railings-texas-houston-dallas-houston-austin-premium-…</code></td><td>—</td><td class="num">31</td><td class="num">1053</td></tr>
+<tr><td><code>/europe-kontakt/glass-railing-texas-glass-dallas-glass-railing-houston-glas…</code></td><td>—</td><td class="num">31</td><td class="num">845</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td>—</td><td class="num">31</td><td class="num">845</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td>—</td><td class="num">31</td><td class="num">845</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td>—</td><td class="num">31</td><td class="num">845</td></tr>
+<tr><td><code>/europe-kontakt/texas-san-antonio-houston-dallas-austin-premium-stainless-s…</code></td><td>—</td><td class="num">31</td><td class="num">1053</td></tr>
+<tr><td><code>/europe-kontakt/customizing-ideas-for-residential-and-commercial-glass-balu…</code></td><td>—</td><td class="num">31</td><td class="num">444</td></tr>
+</tbody></table></div>
+</section>
+
+<footer class="doc">
+  <p><strong>Izvori podataka.</strong> Potpun obilazak sajta vodalux.rs: 193 adrese, 1&nbsp;629 utvrđenih problema, 16&nbsp;459 linkova. Provera živog sajta i Google rezultata pretrage. Analiza konkurencije: <a href="https://casa.co.rs/staklene-ograde-i-obloge/staklene-ograde/">casa.co.rs</a>, <a href="https://www.staklenisistemi.com/kontakt/">staklenisistemi.com</a>, <a href="https://aldox.rs/tag/staklene-ograde/">aldox.rs</a>, <a href="https://www.navidiku.rs/firme/staklene-ograde/beograd">navidiku.rs</a>, <a href="https://www.planplus.rs/beograd/zastakljivanje-terasa">planplus.rs</a>.</p>
+  <p><strong>Napomena.</strong> Analiza je urađena bez pristupa Google Search Console-u i Google Analytics-u. Sve što se tiče trenutnog saobraćaja, pretraga i upita podleže preciziranju nakon dobijanja pristupa. Tehnički nalazi dobijeni su iz obilaska sajta i provere živih stranica i ne zahtevaju dodatnu proveru.</p>
+  <p>Dokument pripremljen 30. oktobra 2026.</p>
+</footer>
+
+</div>
+</body>
+</html>
